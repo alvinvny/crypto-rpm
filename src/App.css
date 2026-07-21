@@ -1,10 +1,13 @@
 /* ============================================  
-   CryptoRPM v7.0 — MEGA STYLESHEET  
-   Multi-Timeframe + Smart Entry + Bankroll  
+   CryptoRPM v8.0 — MOBILE OPTIMIZED  
    ============================================ */
 
 * {  
   box-sizing: border-box;  
+}
+
+html {  
+  overflow-x: hidden;  
 }
 
 body {  
@@ -14,6 +17,7 @@ body {
   font-family: "Inter", sans-serif;  
   -webkit-font-smoothing: antialiased;  
   -moz-osx-font-smoothing: grayscale;  
+  overflow-x: hidden;  
 }
 
 /* ============================================  
@@ -106,6 +110,7 @@ body {
   max-width: 1500px;  
   margin: auto;  
   padding: 1.5rem;  
+  overflow-x: hidden;  
 }
 
 /* ============================================  
@@ -128,6 +133,567 @@ h1 {
   margin-top: 0.5rem;  
   font-size: 1.1rem;  
 }
+
+/* ============================================  
+   v8.0 TARGET PANEL  
+   ============================================ */  
+.target-panel {  
+  background: #151515;  
+  border: 1px solid #282828;  
+  border-radius: 16px;  
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);  
+  margin-bottom: 2rem;  
+  overflow: hidden;  
+}
+
+.target-header {  
+  display: flex;  
+  align-items: center;  
+  gap: 10px;  
+  padding: 1.5rem 2rem 0;  
+  flex-wrap: wrap;  
+}
+
+.target-header svg { color: #f7931a; }
+
+.target-header h2 {  
+  margin: 0;  
+  color: #f7931a;  
+  font-size: 1.4rem;  
+  flex: 1;  
+}
+
+.target-badge {  
+  background: #2a1f00;  
+  color: #f7931a;  
+  padding: 4px 12px;  
+  border-radius: 999px;  
+  font-size: 0.7rem;  
+  font-weight: bold;  
+  text-transform: uppercase;  
+  letter-spacing: 0.5px;  
+  border: 1px solid #f7931a33;  
+}
+
+.target-body {  
+  padding: 1.5rem 2rem 2rem;  
+}
+
+/* Target Input */  
+.target-input-section {  
+  display: flex;  
+  gap: 1.5rem;  
+  margin-bottom: 1.5rem;  
+  flex-wrap: wrap;  
+}
+
+.target-input-group {  
+  flex: 1;  
+  min-width: 250px;  
+}
+
+.target-input-group label,  
+.kalshi-prices-group label {  
+  display: block;  
+  color: #aaa;  
+  font-size: 0.85rem;  
+  margin-bottom: 0.5rem;  
+  font-weight: 500;  
+}
+
+.target-input-row {  
+  display: flex;  
+  gap: 0.75rem;  
+  align-items: center;  
+  flex-wrap: wrap;  
+}
+
+.target-input-wrapper {  
+  position: relative;  
+  display: flex;  
+  align-items: center;  
+  flex: 1;  
+  min-width: 150px;  
+}
+
+.input-icon {  
+  position: absolute;  
+  left: 12px;  
+  color: #888;  
+  pointer-events: none;  
+}
+
+.target-input {  
+  background: #1a1a1a;  
+  border: 1px solid #444;  
+  border-radius: 10px;  
+  padding: 12px 16px 12px 38px;  
+  color: white;  
+  font-size: 1.1rem;  
+  font-weight: 600;  
+  width: 100%;  
+  outline: none;  
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;  
+  font-variant-numeric: tabular-nums;  
+}
+
+.target-input:focus {  
+  border-color: #f7931a;  
+  box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.15);  
+}
+
+.target-input::placeholder { color: #555; font-weight: 400; }
+
+.target-input::-webkit-outer-spin-button,  
+.target-input::-webkit-inner-spin-button {  
+  -webkit-appearance: none;  
+  margin: 0;  
+}
+
+.target-input[type="number"] { -moz-appearance: textfield; }
+
+.target-set-btn {  
+  background: #f7931a;  
+  color: black;  
+  border: none;  
+  border-radius: 10px;  
+  padding: 12px 24px;  
+  font-weight: bold;  
+  font-size: 1rem;  
+  cursor: pointer;  
+  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;  
+  white-space: nowrap;  
+}
+
+.target-set-btn:hover:not(:disabled) {  
+  background: #e08000;  
+  transform: translateY(-2px);  
+  box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);  
+}
+
+.target-set-btn:disabled {  
+  background: #333;  
+  color: #888;  
+  cursor: not-allowed;  
+  opacity: 0.6;  
+}
+
+.target-clear-btn {  
+  background: transparent;  
+  color: #888;  
+  border: 1px solid #444;  
+  border-radius: 10px;  
+  padding: 12px 18px;  
+  font-weight: 600;  
+  font-size: 0.9rem;  
+  cursor: pointer;  
+  transition: all 0.2s ease;  
+  white-space: nowrap;  
+}
+
+.target-clear-btn:hover {  
+  color: #ff4d4d;  
+  border-color: #ff4d4d;  
+}
+
+/* Kalshi Prices Input */  
+.kalshi-prices-group {  
+  min-width: 250px;  
+}
+
+.kalshi-prices-row {  
+  display: flex;  
+  gap: 0.5rem;  
+  align-items: center;  
+  flex-wrap: wrap;  
+}
+
+.kalshi-price-input-wrap {  
+  position: relative;  
+  display: flex;  
+  align-items: center;  
+}
+
+.input-icon-sm {  
+  position: absolute;  
+  left: 8px;  
+  pointer-events: none;  
+}
+
+.input-icon-sm.green { color: #00ff88; }  
+.input-icon-sm.red { color: #ff4d4d; }
+
+.kalshi-price-input {  
+  background: #1a1a1a;  
+  border: 1px solid #444;  
+  border-radius: 8px;  
+  padding: 10px 12px 10px 28px;  
+  color: white;  
+  font-size: 1rem;  
+  font-weight: 600;  
+  width: 90px;  
+  outline: none;  
+  transition: border-color 0.2s ease;  
+}
+
+.kalshi-price-input:focus { border-color: #f7931a; }  
+.kalshi-price-input::placeholder { color: #555; font-weight: 400; }
+
+.kalshi-price-input::-webkit-outer-spin-button,  
+.kalshi-price-input::-webkit-inner-spin-button {  
+  -webkit-appearance: none;  
+  margin: 0;  
+}
+
+.kalshi-price-input[type="number"] { -moz-appearance: textfield; }
+
+.kalshi-prices-set-btn {  
+  background: #f7931a;  
+  color: black;  
+  border: none;  
+  border-radius: 8px;  
+  padding: 10px 16px;  
+  font-weight: bold;  
+  cursor: pointer;  
+  transition: background-color 0.2s;  
+}
+
+.kalshi-prices-set-btn:hover { background: #e08000; }
+
+.kalshi-prices-clear-btn {  
+  background: transparent;  
+  color: #888;  
+  border: 1px solid #444;  
+  border-radius: 8px;  
+  padding: 10px 14px;  
+  cursor: pointer;  
+  transition: all 0.2s ease;  
+}
+
+.kalshi-prices-clear-btn:hover {  
+  color: #ff4d4d;  
+  border-color: #ff4d4d;  
+}
+
+/* Target Display */  
+.target-display-grid {  
+  display: grid;  
+  grid-template-columns: repeat(3, 1fr);  
+  gap: 1rem;  
+  margin-bottom: 1.5rem;  
+}
+
+.target-info-card {  
+  background: #1a1a1a;  
+  border: 1px solid #282828;  
+  border-radius: 12px;  
+  padding: 1.25rem;  
+  text-align: center;  
+}
+
+.target-info-label {  
+  display: block;  
+  font-size: 0.7rem;  
+  color: #888;  
+  font-weight: 600;  
+  text-transform: uppercase;  
+  letter-spacing: 1px;  
+  margin-bottom: 0.5rem;  
+}
+
+.target-info-value {  
+  margin: 0;  
+  font-size: 1.6rem;  
+  font-weight: bold;  
+  color: #d0d0d0;  
+  line-height: 1.2;  
+  word-break: break-all;  
+}
+
+.countdown-value { color: #f7931a !important; }
+
+.target-info-sub {  
+  display: block;  
+  font-size: 0.8rem;  
+  font-weight: 600;  
+  margin-top: 0.4rem;  
+}
+
+.text-green { color: #00ff88; }  
+.text-red { color: #ff4d4d; }
+
+/* Price Flash */  
+.price-flash-up {  
+  animation: flashGreen 0.5s ease;  
+}
+
+.price-flash-down {  
+  animation: flashRed 0.5s ease;  
+}
+
+@keyframes flashGreen {  
+  0% { color: #00ff88; }  
+  100% { color: #d0d0d0; }  
+}
+
+@keyframes flashRed {  
+  0% { color: #ff4d4d; }  
+  100% { color: #d0d0d0; }  
+}
+
+/* Distance Bar */  
+.distance-bar-section {  
+  margin-bottom: 1.5rem;  
+}
+
+.distance-bar-label {  
+  display: flex;  
+  justify-content: space-between;  
+  align-items: center;  
+  margin-bottom: 8px;  
+  flex-wrap: wrap;  
+  gap: 8px;  
+}
+
+.distance-bar-label span {  
+  font-weight: 700;  
+  font-size: 0.9rem;  
+}
+
+.momentum-badge {  
+  display: inline-flex;  
+  align-items: center;  
+  gap: 4px;  
+  padding: 4px 10px;  
+  border-radius: 999px;  
+  font-size: 0.7rem;  
+  font-weight: 600;  
+}
+
+.momentum-toward { background: #0d3d1f; color: #00ff88; }  
+.momentum-away { background: #3d0d0d; color: #ff4d4d; }  
+.momentum-sideways { background: #2a2a00; color: #ffdd00; }  
+.momentum-neutral { background: #222; color: #888; }
+
+.distance-bar-track {  
+  position: relative;  
+  height: 14px;  
+  background: #222;  
+  border-radius: 999px;  
+  overflow: hidden;  
+}
+
+.distance-bar-center {  
+  position: absolute;  
+  left: 50%;  
+  top: 0;  
+  width: 2px;  
+  height: 100%;  
+  background: #555;  
+  transform: translateX(-50%);  
+}
+
+.distance-bar-fill {  
+  position: absolute;  
+  top: 0;  
+  height: 100%;  
+  border-radius: 999px;  
+  transition: width 0.5s ease;  
+}
+
+.fill-above { background: #00ff88; opacity: 0.6; }  
+.fill-below { background: #ff4d4d; opacity: 0.6; }
+
+.distance-bar-marker {  
+  position: absolute;  
+  top: -3px;  
+  left: 50%;  
+  width: 4px;  
+  height: 20px;  
+  background: white;  
+  border-radius: 2px;  
+  transform: translateX(-50%);  
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);  
+}
+
+.distance-bar-ends {  
+  display: flex;  
+  justify-content: space-between;  
+  font-size: 0.7rem;  
+  color: #666;  
+  margin-top: 4px;  
+}
+
+.distance-bar-ends span {  
+  color: #888;  
+  font-weight: 600;  
+}
+
+/* Kalshi Odds Display */  
+.kalshi-odds-display {  
+  display: flex;  
+  align-items: center;  
+  gap: 1rem;  
+  margin-bottom: 1.5rem;  
+  justify-content: center;  
+}
+
+.kalshi-odds-card {  
+  background: #1a1a1a;  
+  border: 1px solid #333;  
+  border-radius: 12px;  
+  padding: 1rem 2rem;  
+  text-align: center;  
+  flex: 1;  
+  max-width: 200px;  
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;  
+}
+
+.kalshi-odds-card.odds-highlighted {  
+  border-color: #f7931a;  
+  box-shadow: 0 0 15px rgba(247, 147, 26, 0.2);  
+}
+
+.odds-label {  
+  display: block;  
+  font-size: 0.7rem;  
+  color: #888;  
+  font-weight: 600;  
+  text-transform: uppercase;  
+  margin-bottom: 0.3rem;  
+}
+
+.odds-value {  
+  margin: 0;  
+  font-size: 2rem;  
+  font-weight: bold;  
+}
+
+.odds-up { color: #00ff88; }  
+.odds-down { color: #ff4d4d; }
+
+.odds-divider {  
+  color: #555;  
+  font-size: 0.9rem;  
+  font-weight: 600;  
+}
+
+/* Recommendation Card */  
+.recommendation-card {  
+  border-radius: 14px;  
+  padding: 1.5rem;  
+  margin-bottom: 1.5rem;  
+  transition: all 0.3s ease;  
+}
+
+.rec-main {  
+  display: flex;  
+  align-items: center;  
+  gap: 1rem;  
+}
+
+.rec-content { flex: 1; }
+
+.rec-action {  
+  margin: 0;  
+  font-size: 1.2rem;  
+  font-weight: bold;  
+  line-height: 1.3;  
+}
+
+.rec-explanation {  
+  margin: 0.4rem 0 0;  
+  font-size: 0.85rem;  
+  opacity: 0.8;  
+}
+
+.rec-stats {  
+  display: flex;  
+  gap: 1rem;  
+  margin-top: 1rem;  
+  padding-top: 1rem;  
+  border-top: 1px solid rgba(255, 255, 255, 0.1);  
+  flex-wrap: wrap;  
+}
+
+.rec-stat {  
+  display: flex;  
+  flex-direction: column;  
+  align-items: center;  
+  gap: 2px;  
+  font-size: 0.75rem;  
+  color: rgba(255, 255, 255, 0.6);  
+}
+
+.rec-stat strong {  
+  font-size: 1.1rem;  
+  color: white;  
+}
+
+/* Target Save Row */  
+.target-save-row {  
+  text-align: center;  
+}
+
+.save-prediction-btn {  
+  background: #00aa55;  
+  color: white;  
+  border: none;  
+  border-radius: 12px;  
+  padding: 14px 32px;  
+  font-weight: bold;  
+  font-size: 1.1rem;  
+  cursor: pointer;  
+  transition: background-color 0.2s, transform 0.1s;  
+  width: 100%;  
+  max-width: 400px;  
+}
+
+.save-prediction-btn:hover:not(:disabled) {  
+  background: #008844;  
+  transform: translateY(-2px);  
+}
+
+.save-prediction-btn:disabled {  
+  background: #333;  
+  color: #888;  
+  cursor: not-allowed;  
+}
+
+/* Target Placeholder */  
+.target-placeholder {  
+  text-align: center;  
+  padding: 3rem 1rem;  
+  color: #555;  
+}
+
+.target-placeholder svg {  
+  color: #333;  
+  margin-bottom: 1rem;  
+}
+
+.target-placeholder h3 {  
+  color: #888;  
+  margin: 0 0 0.5rem;  
+}
+
+.target-placeholder p {  
+  font-size: 0.9rem;  
+}
+
+/* Side Badge */  
+.side-badge {  
+  display: inline-block;  
+  padding: 3px 10px;  
+  border-radius: 6px;  
+  font-size: 0.7rem;  
+  font-weight: bold;  
+  text-transform: uppercase;  
+}
+
+.side-up { background: #0d3d1f; color: #00ff88; }  
+.side-down { background: #3d0d0d; color: #ff4d4d; }  
+.side-skip { background: #222; color: #888; }
 
 /* ============================================  
    Market Panel  
@@ -238,7 +804,7 @@ h1 {
 }
 
 /* ============================================  
-   MULTI-TIMEFRAME CONFLUENCE (v5.0)  
+   MULTI-TIMEFRAME CONFLUENCE  
    ============================================ */  
 .confluence-panel {  
   background: #151515;  
@@ -254,6 +820,7 @@ h1 {
   align-items: center;  
   gap: 10px;  
   padding: 1.5rem 2rem 0;  
+  flex-wrap: wrap;  
 }
 
 .confluence-header svg { color: #f7931a; }
@@ -290,17 +857,9 @@ h1 {
   transition: transform 0.2s ease, border-color 0.2s ease;  
 }
 
-.timeframe-card:hover {  
-  transform: translateY(-3px);  
-}
-
-.timeframe-card.tf-up {  
-  border-left: 3px solid #00ff88;  
-}
-
-.timeframe-card.tf-down {  
-  border-left: 3px solid #ff4d4d;  
-}
+.timeframe-card:hover { transform: translateY(-3px); }  
+.timeframe-card.tf-up { border-left: 3px solid #00ff88; }  
+.timeframe-card.tf-down { border-left: 3px solid #ff4d4d; }
 
 .tf-label {  
   font-size: 0.75rem;  
@@ -331,22 +890,14 @@ h1 {
   margin-bottom: 0.25rem;  
 }
 
-.tf-change {  
-  font-size: 0.8rem;  
-  font-weight: 600;  
-}
-
+.tf-change { font-size: 0.8rem; font-weight: 600; }  
 .tf-change-up { color: #00ff88; }  
 .tf-change-down { color: #ff4d4d; }
 
 /* Confluence Summary */  
-.confluence-summary {  
-  padding: 0 2rem 2rem;  
-}
+.confluence-summary { padding: 0 2rem 2rem; }
 
-.confluence-meter {  
-  margin-bottom: 1.5rem;  
-}
+.confluence-meter { margin-bottom: 1.5rem; }
 
 .confluence-meter-label {  
   display: flex;  
@@ -420,7 +971,7 @@ h1 {
 .cs-bear { color: #ff4d4d !important; }
 
 /* ============================================  
-   SMART ENTRY SIGNAL (v6.0)  
+   SMART ENTRY SIGNAL  
    ============================================ */  
 .entry-signal-panel {  
   background: #151515;  
@@ -446,9 +997,7 @@ h1 {
   font-size: 1.4rem;  
 }
 
-.entry-body {  
-  padding: 1.5rem 2rem 2rem;  
-}
+.entry-body { padding: 1.5rem 2rem 2rem; }
 
 /* Action Badge */  
 .entry-action-badge {  
@@ -464,9 +1013,7 @@ h1 {
   transition: all 0.3s ease;  
 }
 
-.entry-action-text {  
-  letter-spacing: 1px;  
-}
+.entry-action-text { letter-spacing: 1px; }
 
 .action-strong-buy {  
   background: #0d6b39;  
@@ -513,9 +1060,7 @@ h1 {
 }
 
 /* Entry Kalshi Input */  
-.entry-kalshi-input {  
-  margin-bottom: 1.5rem;  
-}
+.entry-kalshi-input { margin-bottom: 1.5rem; }
 
 .entry-kalshi-input label {  
   display: block;  
@@ -708,7 +1253,7 @@ h1 {
 }
 
 /* ============================================  
-   BANKROLL MANAGER (v7.0)  
+   BANKROLL MANAGER  
    ============================================ */  
 .bankroll-panel {  
   background: #151515;  
@@ -724,6 +1269,7 @@ h1 {
   align-items: center;  
   gap: 10px;  
   padding: 1.5rem 2rem 0;  
+  flex-wrap: wrap;  
 }
 
 .bankroll-header svg { color: #f7931a; }
@@ -747,14 +1293,10 @@ h1 {
   border: 1px solid #f7931a33;  
 }
 
-.bankroll-body {  
-  padding: 1.5rem 2rem 2rem;  
-}
+.bankroll-body { padding: 1.5rem 2rem 2rem; }
 
 /* Bankroll Input */  
-.bankroll-input-section {  
-  margin-bottom: 1.5rem;  
-}
+.bankroll-input-section { margin-bottom: 1.5rem; }
 
 .bankroll-input-section label {  
   display: block;  
@@ -1144,17 +1686,14 @@ h1 {
   font-size: 0.85rem;  
 }
 
-.journal-filters button:hover:not(.active) { background: #3a3a3a; }
-
+.journal-filters button:hover:not(.active) { background: #3a3a3a; }  
 .journal-filters button.active { background: #f7931a; color: black; }  
 .journal-filters button.filter-win.active { background: #00cc66; color: #000; }  
 .journal-filters button.filter-loss.active { background: #ff4d4d; color: #000; }  
 .journal-filters button.filter-pending.active { background: #888; color: #000; }
 
 /* Table */  
-.journal-table-wrapper {  
-  overflow-x: auto;  
-}
+.journal-table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
 table {  
   width: 100%;  
@@ -1203,7 +1742,6 @@ tbody tr:hover { background: #1a1a1a; }
 .edge-cell-negative { color: #ff4d4d; background: rgba(255, 77, 77, 0.08); }  
 .edge-cell-neutral { color: #888; }
 
-/* Action cell in journal */  
 .action-cell {  
   font-size: 0.65rem;  
   font-weight: bold;  
@@ -1319,1481 +1857,159 @@ tbody tr:hover { background: #1a1a1a; }
 }
 
 /* ============================================  
-   Responsive  
+   RESPONSIVE — TABLET (max-width: 1100px)  
    ============================================ */  
 @media (max-width: 1100px) {  
-  .timeframe-grid {  
-    grid-template-columns: repeat(2, 1fr);  
-  }
-
-  .confluence-stats {  
-    grid-template-columns: repeat(2, 1fr);  
-  }
-
-  .bankroll-stats-grid {  
-    grid-template-columns: repeat(2, 1fr);  
-  }  
+  .timeframe-grid { grid-template-columns: repeat(2, 1fr); }  
+  .confluence-stats { grid-template-columns: repeat(2, 1fr); }  
+  .bankroll-stats-grid { grid-template-columns: repeat(2, 1fr); }  
+  .target-display-grid { grid-template-columns: repeat(3, 1fr); }  
 }
 
-@media (max-width: 900px) {  
+/* ============================================  
+   RESPONSIVE — MOBILE (max-width: 768px)  
+   ============================================ */  
+@media (max-width: 768px) {  
+  .app { padding: 0.75rem; }
+
+  h1 { font-size: 2rem; }  
+  .subtitle { font-size: 0.9rem; }
+
+  /* Market Panel */  
   .market-panel { grid-template-columns: 1fr; }
 
-  .overview-grid { grid-template-columns: 1fr 1fr; }
+  .main-market { padding: 1.25rem; }  
+  .prediction-main { font-size: 2.8rem; }  
+  .btc-price { font-size: 2rem; }  
+  .yes-box h2, .no-box h2 { font-size: 2.5rem; }
 
-  .journal-header {  
-    flex-direction: column;  
-    align-items: flex-start;  
+  .side-market { flex-direction: row; }  
+  .yes-box, .no-box { padding: 1.25rem; font-size: 1.2rem; }
+
+  /* Target Panel */  
+  .target-header { padding: 1rem 1.25rem 0; }  
+  .target-body { padding: 1rem 1.25rem 1.25rem; }  
+  .target-header h2 { font-size: 1.2rem; }
+
+  .target-input-section { flex-direction: column; gap: 1rem; }  
+  .target-input-group { min-width: unset; }  
+  .kalshi-prices-group { min-width: unset; }
+
+  .target-input-row { flex-direction: column; }  
+  .target-input-wrapper { width: 100%; min-width: unset; }  
+  .target-set-btn { width: 100%; }  
+  .target-clear-btn { width: 100%; }
+
+  .kalshi-prices-row { flex-wrap: wrap; }  
+  .kalshi-price-input-wrap { flex: 1; min-width: 80px; }  
+  .kalshi-price-input { width: 100%; }  
+  .kalshi-prices-set-btn { flex: 1; }
+
+  .target-display-grid {  
+    grid-template-columns: 1fr;  
+    gap: 0.75rem;  
   }
 
-  .journal-controls {  
-    flex-direction: column;  
-    align-items: stretch;  
-    width: 100%;  
-  }
+  .target-info-value { font-size: 1.4rem; }
 
-  .journal-filters { width: 100%; }  
-  .journal-filters button { flex-grow: 1; }
+  /* Kalshi Odds */  
+  .kalshi-odds-display { flex-direction: column; gap: 0.75rem; }  
+  .kalshi-odds-card { max-width: none; width: 100%; }
 
-  .button-row { flex-direction: column; }  
-  .button-row button { width: 100%; }
+  /* Recommendation */  
+  .rec-main { flex-direction: column; text-align: center; }  
+  .rec-action { font-size: 1rem; }  
+  .rec-stats { justify-content: center; }
 
-  .prediction-main { font-size: 3.5rem; }  
-  .btc-price { font-size: 2.3rem; }  
-  .yes-box h2, .no-box h2 { font-size: 2.8rem; }  
-  .stat-card h3 { font-size: 1.8rem; }
+  .save-prediction-btn { max-width: none; }
 
-  .grading-toast { left: 20px; right: 20px; top: 10px; }
+  /* Distance Bar */  
+  .distance-bar-label { flex-direction: column; align-items: flex-start; }
 
-  .entry-details-grid {  
+  /* Chart */  
+  .chart-card { padding: 0.75rem; }
+
+  /* Confluence */  
+  .confluence-header { padding: 1rem 1.25rem 0; }  
+  .confluence-header h2 { font-size: 1.2rem; }  
+  .timeframe-grid {  
     grid-template-columns: repeat(2, 1fr);  
-  }
+    gap: 0.75rem;  
+    padding: 1rem 1.25rem;  
+  }  
+  .confluence-summary { padding: 0 1.25rem 1.25rem; }  
+  .confluence-stats { grid-template-columns: repeat(2, 1fr); }
+
+  /* Entry Signal */  
+  .entry-header { padding: 1rem 1.25rem 0; }  
+  .entry-body { padding: 1rem 1.25rem 1.25rem; }  
+  .entry-action-badge { font-size: 1rem; padding: 1rem; flex-wrap: wrap; }  
+  .entry-details-grid { grid-template-columns: repeat(2, 1fr); }  
+  .ed-value { font-size: 1.4rem; }
 
   .kalshi-input-row { flex-direction: column; }  
   .kalshi-input { width: 100%; }  
   .kalshi-set-btn, .kalshi-clear-btn { width: 100%; }
 
+  /* Bankroll */  
+  .bankroll-header { padding: 1rem 1.25rem 0; }  
+  .bankroll-body { padding: 1rem 1.25rem 1.25rem; }  
+  .bankroll-stats-grid { grid-template-columns: repeat(2, 1fr); }  
   .bankroll-input-row { flex-direction: column; }  
   .bankroll-input-wrapper { width: 100%; }  
   .bankroll-input { width: 100%; }  
-  .bankroll-set-btn { width: 100%; }
-
-  .bet-rec-amount { font-size: 2.2rem; }  
+  .bankroll-set-btn { width: 100%; }  
+  .bet-rec-amount { font-size: 2rem; }  
   .bet-rec-main { flex-direction: column; text-align: center; }
 
-  .entry-action-badge { font-size: 1.1rem; }  
-}
-
-@media (max-width: 500px) {  
-  .app { padding: 1rem; }  
-  h1 { font-size: 2.5rem; }
-
-  .overview-grid { grid-template-columns: 1fr; }  
-  .journal-filters { flex-direction: column; }
-
-  .timeframe-grid { grid-template-columns: 1fr; }  
-  .confluence-stats { grid-template-columns: 1fr; }  
-  .bankroll-stats-grid { grid-template-columns: 1fr; }  
-  .entry-details-grid { grid-template-columns: 1fr; }
-
-  .entry-action-badge { font-size: 0.95rem; padding: 1rem; }  
-  .ed-value { font-size: 1.4rem; }  
-}  /* ============================================  
-   CryptoRPM v7.0 — MEGA STYLESHEET  
-   Multi-Timeframe + Smart Entry + Bankroll  
-   ============================================ */
-
-* {  
-  box-sizing: border-box;  
-}
-
-body {  
-  margin: 0;  
-  background: #0a0a0a;  
-  color: white;  
-  font-family: "Inter", sans-serif;  
-  -webkit-font-smoothing: antialiased;  
-  -moz-osx-font-smoothing: grayscale;  
-}
-
-/* ============================================  
-   Loading  
-   ============================================ */  
-.loading {  
-  height: 100vh;  
-  display: grid;  
-  place-items: center;  
-  font-size: 1.8rem;  
-  color: #f7931a;  
-  font-weight: bold;  
-  animation: loadingPulse 1.5s ease-in-out infinite;  
-}
-
-@keyframes loadingPulse {  
-  0%, 100% { opacity: 1; }  
-  50% { opacity: 0.4; }  
-}
-
-/* ============================================  
-   Toast  
-   ============================================ */  
-.grading-toast {  
-  position: fixed;  
-  top: 20px;  
-  right: 20px;  
-  background: #0d6b39;  
-  color: #b8ffb8;  
-  padding: 14px 22px;  
-  border-radius: 12px;  
-  display: flex;  
-  align-items: center;  
-  gap: 10px;  
-  font-weight: 600;  
-  font-size: 0.95rem;  
-  z-index: 9999;  
-  box-shadow: 0 6px 24px rgba(0, 255, 136, 0.25);  
-  border: 1px solid #00ff8855;  
-  animation: toastSlideIn 0.4s ease-out, toastFadeOut 0.5s ease-in 2.5s forwards;  
-}
-
-@keyframes toastSlideIn {  
-  from { transform: translateX(120%); opacity: 0; }  
-  to { transform: translateX(0); opacity: 1; }  
-}
-
-@keyframes toastFadeOut {  
-  from { opacity: 1; }  
-  to { opacity: 0; transform: translateY(-20px); }  
-}
-
-/* ============================================  
-   Auto-Grade Banner  
-   ============================================ */  
-.auto-grade-banner {  
-  margin-top: 1rem;  
-  padding: 10px 16px;  
-  background: #1a1a2e;  
-  border: 1px solid #333;  
-  border-radius: 10px;  
-  display: flex;  
-  align-items: center;  
-  gap: 8px;  
-  color: #aaa;  
-  font-size: 0.85rem;  
-  font-weight: 500;  
-  animation: bannerPulse 2.5s ease-in-out infinite;  
-}
-
-.auto-grade-banner svg {  
-  color: #f7931a;  
-  animation: spin 3s linear infinite;  
-}
-
-@keyframes spin {  
-  from { transform: rotate(0deg); }  
-  to { transform: rotate(360deg); }  
-}
-
-@keyframes bannerPulse {  
-  0%, 100% { border-color: #333; }  
-  50% { border-color: #f7931a55; }  
-}
-
-/* ============================================  
-   App Container  
-   ============================================ */  
-.app {  
-  max-width: 1500px;  
-  margin: auto;  
-  padding: 1.5rem;  
-}
-
-/* ============================================  
-   Header  
-   ============================================ */  
-header {  
-  text-align: center;  
-  margin-bottom: 2rem;  
-}
-
-h1 {  
-  color: #f7931a;  
-  font-size: 3rem;  
-  margin: 0;  
-  letter-spacing: 1px;  
-}
-
-.subtitle {  
-  color: #888;  
-  margin-top: 0.5rem;  
-  font-size: 1.1rem;  
-}
-
-/* ============================================  
-   Market Panel  
-   ============================================ */  
-.market-panel {  
-  display: grid;  
-  grid-template-columns: 2fr 1fr;  
-  gap: 1.5rem;  
-  margin-bottom: 2rem;  
-}
-
-.main-market,  
-.side-market,  
-.chart-card,  
-.stat-card,  
-.journal-card,  
-.overview-card {  
-  background: #151515;  
-  border: 1px solid #282828;  
-  border-radius: 16px;  
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);  
-}
-
-.main-market {  
-  padding: 2rem;  
-  display: flex;  
-  flex-direction: column;  
-  justify-content: space-between;  
-}
-
-.question {  
-  color: #aaa;  
-  font-size: 1rem;  
-  letter-spacing: 1px;  
-  margin-bottom: 1.5rem;  
-  text-transform: uppercase;  
-  font-weight: 600;  
-}
-
-.prediction-main {  
-  font-size: 4.5rem;  
-  font-weight: bold;  
-  line-height: 1;  
-  margin-bottom: 1.5rem;  
-  text-align: center;  
-  transition: color 0.3s ease;  
-}
-
-.prediction-up { color: #00ff88; }  
-.prediction-down { color: #ff4d4d; }
-
-.btc-price {  
-  font-size: 2.8rem;  
-  font-weight: bold;  
-  margin-bottom: 1.5rem;  
-  text-align: center;  
-  color: #d0d0d0;  
-}
-
-.countdown {  
-  display: flex;  
-  align-items: center;  
-  justify-content: center;  
-  gap: 0.75rem;  
-  color: #d0d0d0;  
-  font-size: 1.2rem;  
-  font-weight: 500;  
-  margin-bottom: 1.5rem;  
-}
-
-.button-row {  
-  display: flex;  
-  flex-wrap: wrap;  
-  gap: 1rem;  
-  margin-top: auto;  
-}
-
-/* Side Market */  
-.side-market {  
-  display: flex;  
-  flex-direction: column;  
-  gap: 1.5rem;  
-}
-
-.yes-box, .no-box {  
-  flex: 1;  
-  border-radius: 16px;  
-  padding: 2rem;  
-  text-align: center;  
-  display: flex;  
-  flex-direction: column;  
-  justify-content: center;  
-  align-items: center;  
-  font-size: 1.5rem;  
-  font-weight: bold;  
-  transition: transform 0.2s ease;  
-}
-
-.yes-box:hover, .no-box:hover { transform: scale(1.02); }
-
-.yes-box { background: #0f4224; color: #00ff88; }  
-.no-box { background: #4a1111; color: #ff4d4d; }
-
-.yes-box h2, .no-box h2 {  
-  font-size: 3.5rem;  
-  margin: 0.75rem 0 0;  
-  line-height: 1;  
-}
-
-/* ============================================  
-   MULTI-TIMEFRAME CONFLUENCE (v5.0)  
-   ============================================ */  
-.confluence-panel {  
-  background: #151515;  
-  border: 1px solid #282828;  
-  border-radius: 16px;  
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);  
-  margin-bottom: 2rem;  
-  overflow: hidden;  
-}
-
-.confluence-header {  
-  display: flex;  
-  align-items: center;  
-  gap: 10px;  
-  padding: 1.5rem 2rem 0;  
-}
-
-.confluence-header svg { color: #f7931a; }
-
-.confluence-header h2 {  
-  margin: 0;  
-  color: #f7931a;  
-  font-size: 1.4rem;  
-  flex: 1;  
-}
-
-.confluence-star-rating {  
-  display: flex;  
-  gap: 4px;  
-}
-
-.star-filled { color: #ffd700; }  
-.star-empty { color: #333; }
-
-/* Timeframe Grid */  
-.timeframe-grid {  
-  display: grid;  
-  grid-template-columns: repeat(4, 1fr);  
-  gap: 1rem;  
-  padding: 1.5rem 2rem;  
-}
-
-.timeframe-card {  
-  background: #1a1a1a;  
-  border: 1px solid #333;  
-  border-radius: 12px;  
-  padding: 1.25rem;  
-  text-align: center;  
-  transition: transform 0.2s ease, border-color 0.2s ease;  
-}
-
-.timeframe-card:hover {  
-  transform: translateY(-3px);  
-}
-
-.timeframe-card.tf-up {  
-  border-left: 3px solid #00ff88;  
-}
-
-.timeframe-card.tf-down {  
-  border-left: 3px solid #ff4d4d;  
-}
-
-.tf-label {  
-  font-size: 0.75rem;  
-  color: #888;  
-  font-weight: 600;  
-  text-transform: uppercase;  
-  letter-spacing: 1px;  
-  margin-bottom: 0.5rem;  
-}
-
-.tf-direction {  
-  font-size: 1.3rem;  
-  font-weight: bold;  
-  display: flex;  
-  align-items: center;  
-  justify-content: center;  
-  gap: 4px;  
-  margin-bottom: 0.5rem;  
-}
-
-.tf-dir-up { color: #00ff88; }  
-.tf-dir-down { color: #ff4d4d; }
-
-.tf-confidence {  
-  font-size: 1.6rem;  
-  font-weight: bold;  
-  color: #fff;  
-  margin-bottom: 0.25rem;  
-}
-
-.tf-change {  
-  font-size: 0.8rem;  
-  font-weight: 600;  
-}
-
-.tf-change-up { color: #00ff88; }  
-.tf-change-down { color: #ff4d4d; }
-
-/* Confluence Summary */  
-.confluence-summary {  
-  padding: 0 2rem 2rem;  
-}
-
-.confluence-meter {  
-  margin-bottom: 1.5rem;  
-}
-
-.confluence-meter-label {  
-  display: flex;  
-  justify-content: space-between;  
-  font-size: 0.7rem;  
-  color: #666;  
-  font-weight: 600;  
-  text-transform: uppercase;  
-  letter-spacing: 1px;  
-  margin-bottom: 6px;  
-}
-
-.confluence-meter-track {  
-  position: relative;  
-  height: 12px;  
-  background: #222;  
-  border-radius: 999px;  
-  overflow: hidden;  
-}
-
-.confluence-meter-fill {  
-  height: 100%;  
-  border-radius: 999px;  
-  transition: width 0.6s ease, background 0.3s ease;  
-}
-
-.confluence-meter-marker {  
-  position: absolute;  
-  top: -4px;  
-  width: 4px;  
-  height: 20px;  
-  background: white;  
-  border-radius: 2px;  
-  transform: translateX(-50%);  
-  transition: left 0.6s ease;  
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);  
-}
-
-.confluence-stats {  
-  display: grid;  
-  grid-template-columns: repeat(4, 1fr);  
-  gap: 1rem;  
-}
-
-.confluence-stat {  
-  background: #1a1a1a;  
-  padding: 0.75rem;  
-  border-radius: 10px;  
-  text-align: center;  
-  border: 1px solid #282828;  
-}
-
-.cs-label {  
-  display: block;  
-  font-size: 0.75rem;  
-  color: #888;  
-  font-weight: 600;  
-  text-transform: uppercase;  
-  margin-bottom: 4px;  
-}
-
-.cs-value {  
-  display: block;  
-  font-size: 1.1rem;  
-  font-weight: bold;  
-  color: #d0d0d0;  
-}
-
-.cs-bull { color: #00ff88 !important; }  
-.cs-neutral { color: #f7931a !important; }  
-.cs-bear { color: #ff4d4d !important; }
-
-/* ============================================  
-   SMART ENTRY SIGNAL (v6.0)  
-   ============================================ */  
-.entry-signal-panel {  
-  background: #151515;  
-  border: 1px solid #282828;  
-  border-radius: 16px;  
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);  
-  margin-bottom: 2rem;  
-  overflow: hidden;  
-}
-
-.entry-header {  
-  display: flex;  
-  align-items: center;  
-  gap: 10px;  
-  padding: 1.5rem 2rem 0;  
-}
-
-.entry-header svg { color: #f7931a; }
-
-.entry-header h2 {  
-  margin: 0;  
-  color: #f7931a;  
-  font-size: 1.4rem;  
-}
-
-.entry-body {  
-  padding: 1.5rem 2rem 2rem;  
-}
-
-/* Action Badge */  
-.entry-action-badge {  
-  display: flex;  
-  align-items: center;  
-  justify-content: center;  
-  gap: 12px;  
-  padding: 1.25rem 2rem;  
-  border-radius: 14px;  
-  font-size: 1.3rem;  
-  font-weight: bold;  
-  margin-bottom: 1.5rem;  
-  transition: all 0.3s ease;  
-}
-
-.entry-action-text {  
-  letter-spacing: 1px;  
-}
-
-.action-strong-buy {  
-  background: #0d6b39;  
-  color: #00ff88;  
-  border: 1px solid #00ff8844;  
-  box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);  
-}
-
-.action-buy {  
-  background: #1a3d2a;  
-  color: #66ffaa;  
-  border: 1px solid #66ffaa33;  
-}
-
-.action-lean-buy {  
-  background: #1a2a1a;  
-  color: #88cc88;  
-  border: 1px solid #88cc8833;  
-}
-
-.action-neutral {  
-  background: #2a2a2a;  
-  color: #aaa;  
-  border: 1px solid #44444444;  
-}
-
-.action-lean-sell {  
-  background: #2a1a1a;  
-  color: #cc8888;  
-  border: 1px solid #cc888833;  
-}
-
-.action-sell {  
-  background: #3d1a1a;  
-  color: #ffaaaa;  
-  border: 1px solid #ffaaaa33;  
-}
-
-.action-strong-sell {  
-  background: #6b0d0d;  
-  color: #ff4d4d;  
-  border: 1px solid #ff4d4d44;  
-  box-shadow: 0 0 20px rgba(255, 77, 77, 0.1);  
-}
-
-/* Entry Kalshi Input */  
-.entry-kalshi-input {  
-  margin-bottom: 1.5rem;  
-}
-
-.entry-kalshi-input label {  
-  display: block;  
-  color: #aaa;  
-  font-size: 0.85rem;  
-  margin-bottom: 0.5rem;  
-  font-weight: 500;  
-}
-
-.kalshi-input-row {  
-  display: flex;  
-  gap: 0.75rem;  
-  align-items: center;  
-  flex-wrap: wrap;  
-}
-
-.kalshi-input {  
-  background: #1a1a1a;  
-  border: 1px solid #444;  
-  border-radius: 10px;  
-  padding: 12px 16px;  
-  color: white;  
-  font-size: 1.1rem;  
-  font-weight: 600;  
-  width: 140px;  
-  outline: none;  
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;  
-  font-variant-numeric: tabular-nums;  
-}
-
-.kalshi-input:focus {  
-  border-color: #f7931a;  
-  box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.15);  
-}
-
-.kalshi-input::placeholder { color: #555; font-weight: 400; }
-
-.kalshi-input::-webkit-outer-spin-button,  
-.kalshi-input::-webkit-inner-spin-button {  
-  -webkit-appearance: none;  
-  margin: 0;  
-}
-
-.kalshi-input[type="number"] { -moz-appearance: textfield; }
-
-.kalshi-set-btn {  
-  background: #f7931a;  
-  color: black;  
-  border: none;  
-  border-radius: 10px;  
-  padding: 12px 24px;  
-  font-weight: bold;  
-  font-size: 1rem;  
-  cursor: pointer;  
-  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;  
-}
-
-.kalshi-set-btn:hover:not(:disabled) {  
-  background: #e08000;  
-  transform: translateY(-2px);  
-  box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);  
-}
-
-.kalshi-set-btn:disabled {  
-  background: #333;  
-  color: #888;  
-  cursor: not-allowed;  
-  opacity: 0.6;  
-}
-
-.kalshi-clear-btn {  
-  background: transparent;  
-  color: #888;  
-  border: 1px solid #444;  
-  border-radius: 10px;  
-  padding: 12px 18px;  
-  font-weight: 600;  
-  font-size: 0.9rem;  
-  cursor: pointer;  
-  transition: all 0.2s ease;  
-}
-
-.kalshi-clear-btn:hover {  
-  color: #ff4d4d;  
-  border-color: #ff4d4d;  
-}
-
-/* Entry Details Grid */  
-.entry-details-grid {  
-  display: grid;  
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));  
-  gap: 1rem;  
-  margin-bottom: 1.5rem;  
-}
-
-.entry-detail {  
-  background: #1a1a1a;  
-  border: 1px solid #282828;  
-  border-radius: 12px;  
-  padding: 1rem;  
-  text-align: center;  
-  transition: border-color 0.2s ease;  
-}
-
-.entry-detail:hover { border-color: #444; }
-
-.ed-label {  
-  font-size: 0.75rem;  
-  color: #888;  
-  font-weight: 600;  
-  text-transform: uppercase;  
-  margin: 0 0 0.5rem;  
-}
-
-.ed-value {  
-  margin: 0;  
-  font-size: 1.8rem;  
-  font-weight: bold;  
-  color: #d0d0d0;  
-  line-height: 1;  
-}
-
-.ed-value.dim { color: #444; }
-
-.edge-positive { color: #00ff88 !important; }  
-.edge-negative { color: #ff4d4d !important; }
-
-.edge-verdict-badge {  
-  display: inline-block;  
-  padding: 5px 14px;  
-  border-radius: 999px;  
-  font-size: 0.7rem;  
-  font-weight: bold;  
-  text-transform: uppercase;  
-  letter-spacing: 0.5px;  
-}
-
-.verdict-strong { background: #0d6b39; color: #b8ffb8; }  
-.verdict-moderate { background: #3d2800; color: #ffd699; }  
-.verdict-slight { background: #2a2a2a; color: #ccc; }  
-.verdict-none { background: #222; color: #888; }
-
-/* Entry Edge Bar */  
-.entry-edge-bar { margin-top: 0.5rem; }
-
-.edge-bar-labels {  
-  display: flex;  
-  justify-content: space-between;  
-  font-size: 0.75rem;  
-  color: #888;  
-  margin-bottom: 6px;  
-  font-weight: 500;  
-}
-
-.edge-bar-track {  
-  position: relative;  
-  height: 10px;  
-  background: #222;  
-  border-radius: 999px;  
-  overflow: hidden;  
-}
-
-.edge-bar-kalshi {  
-  position: absolute;  
-  top: 0;  
-  left: 0;  
-  height: 100%;  
-  background: #6366f1;  
-  border-radius: 999px;  
-  opacity: 0.5;  
-  transition: width 0.5s ease;  
-}
-
-.edge-bar-rpm {  
-  position: absolute;  
-  top: 0;  
-  left: 0;  
-  height: 100%;  
-  background: #f7931a;  
-  border-radius: 999px;  
-  opacity: 0.7;  
-  transition: width 0.5s ease;  
-}
-
-.edge-direction-text {  
-  text-align: center;  
-  color: #666;  
-  font-size: 0.8rem;  
-  margin-top: 8px;  
-}
-
-/* ============================================  
-   BANKROLL MANAGER (v7.0)  
-   ============================================ */  
-.bankroll-panel {  
-  background: #151515;  
-  border: 1px solid #282828;  
-  border-radius: 16px;  
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);  
-  margin-bottom: 2rem;  
-  overflow: hidden;  
-}
-
-.bankroll-header {  
-  display: flex;  
-  align-items: center;  
-  gap: 10px;  
-  padding: 1.5rem 2rem 0;  
-}
-
-.bankroll-header svg { color: #f7931a; }
-
-.bankroll-header h2 {  
-  margin: 0;  
-  color: #f7931a;  
-  font-size: 1.4rem;  
-  flex: 1;  
-}
-
-.bankroll-badge {  
-  background: #2a1f00;  
-  color: #f7931a;  
-  padding: 4px 12px;  
-  border-radius: 999px;  
-  font-size: 0.7rem;  
-  font-weight: bold;  
-  text-transform: uppercase;  
-  letter-spacing: 0.5px;  
-  border: 1px solid #f7931a33;  
-}
-
-.bankroll-body {  
-  padding: 1.5rem 2rem 2rem;  
-}
-
-/* Bankroll Input */  
-.bankroll-input-section {  
-  margin-bottom: 1.5rem;  
-}
-
-.bankroll-input-section label {  
-  display: block;  
-  color: #aaa;  
-  font-size: 0.85rem;  
-  margin-bottom: 0.5rem;  
-  font-weight: 500;  
-}
-
-.bankroll-input-row {  
-  display: flex;  
-  gap: 0.75rem;  
-  align-items: center;  
-  flex-wrap: wrap;  
-}
-
-.bankroll-input-wrapper {  
-  position: relative;  
-  display: flex;  
-  align-items: center;  
-}
-
-.bankroll-input-icon {  
-  position: absolute;  
-  left: 12px;  
-  color: #888;  
-  pointer-events: none;  
-}
-
-.bankroll-input {  
-  background: #1a1a1a;  
-  border: 1px solid #444;  
-  border-radius: 10px;  
-  padding: 12px 16px 12px 38px;  
-  color: white;  
-  font-size: 1.1rem;  
-  font-weight: 600;  
-  width: 180px;  
-  outline: none;  
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;  
-  font-variant-numeric: tabular-nums;  
-}
-
-.bankroll-input:focus {  
-  border-color: #f7931a;  
-  box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.15);  
-}
-
-.bankroll-input::placeholder { color: #555; font-weight: 400; }
-
-.bankroll-input::-webkit-outer-spin-button,  
-.bankroll-input::-webkit-inner-spin-button {  
-  -webkit-appearance: none;  
-  margin: 0;  
-}
-
-.bankroll-input[type="number"] { -moz-appearance: textfield; }
-
-.bankroll-set-btn {  
-  background: #f7931a;  
-  color: black;  
-  border: none;  
-  border-radius: 10px;  
-  padding: 12px 24px;  
-  font-weight: bold;  
-  font-size: 1rem;  
-  cursor: pointer;  
-  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;  
-}
-
-.bankroll-set-btn:hover:not(:disabled) {  
-  background: #e08000;  
-  transform: translateY(-2px);  
-  box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);  
-}
-
-.bankroll-set-btn:disabled {  
-  background: #333;  
-  color: #888;  
-  cursor: not-allowed;  
-  opacity: 0.6;  
-}
-
-/* Bankroll Stats Grid */  
-.bankroll-stats-grid {  
-  display: grid;  
-  grid-template-columns: repeat(4, 1fr);  
-  gap: 1rem;  
-  margin-bottom: 1.5rem;  
-}
-
-.bankroll-stat-card {  
-  background: #1a1a1a;  
-  border: 1px solid #282828;  
-  border-radius: 12px;  
-  padding: 1rem;  
-  text-align: center;  
-  transition: border-color 0.2s ease;  
-}
-
-.bankroll-stat-card:hover { border-color: #444; }
-
-.bankroll-stat-card svg {  
-  color: #f7931a;  
-  margin-bottom: 0.4rem;  
-}
-
-.bankroll-stat-card p {  
-  margin: 0 0 0.3rem;  
-  font-size: 0.75rem;  
-  color: #888;  
-  font-weight: 600;  
-  text-transform: uppercase;  
-}
-
-.bankroll-stat-card h3 {  
-  margin: 0;  
-  font-size: 1.5rem;  
-  font-weight: bold;  
-  color: #d0d0d0;  
-}
-
-/* Bet Recommendation */  
-.bet-recommendation {  
-  background: #1a1a1a;  
-  border: 1px solid #333;  
-  border-radius: 14px;  
-  padding: 1.5rem;  
-}
-
-.bet-rec-main {  
-  display: flex;  
-  align-items: center;  
-  gap: 1.25rem;  
-  margin-bottom: 1.25rem;  
-  padding-bottom: 1.25rem;  
-  border-bottom: 1px solid #282828;  
-}
-
-.bet-rec-icon {  
-  width: 60px;  
-  height: 60px;  
-  background: #0d6b39;  
-  border-radius: 14px;  
-  display: flex;  
-  align-items: center;  
-  justify-content: center;  
-  flex-shrink: 0;  
-}
-
-.bet-rec-icon svg { color: #00ff88; }
-
-.bet-rec-content { flex: 1; }
-
-.bet-rec-label {  
-  font-size: 0.7rem;  
-  color: #888;  
-  font-weight: 600;  
-  text-transform: uppercase;  
-  letter-spacing: 1px;  
-  margin: 0 0 0.4rem;  
-}
-
-.bet-rec-amount {  
-  margin: 0;  
-  font-size: 2.8rem;  
-  font-weight: bold;  
-  color: #00ff88;  
-  line-height: 1;  
-}
-
-.bet-rec-pct {  
-  margin: 0.3rem 0 0;  
-  color: #888;  
-  font-size: 0.85rem;  
-}
-
-/* Bet Details */  
-.bet-rec-details {  
-  display: grid;  
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));  
-  gap: 0.75rem;  
-}
-
-.bet-detail {  
-  display: flex;  
-  justify-content: space-between;  
-  align-items: center;  
-  padding: 8px 12px;  
-  background: #222;  
-  border-radius: 8px;  
-  font-size: 0.85rem;  
-}
-
-.bet-detail span { color: #888; }  
-.bet-detail strong { color: #d0d0d0; }
-
-/* Bet Warning / Info */  
-.bet-warning, .bet-info {  
-  margin-top: 1rem;  
-  padding: 10px 14px;  
-  border-radius: 10px;  
-  display: flex;  
-  align-items: flex-start;  
-  gap: 8px;  
-  font-size: 0.8rem;  
-  line-height: 1.4;  
-}
-
-.bet-warning {  
-  background: #3d1a00;  
-  color: #ffaa66;  
-  border: 1px solid #ff660033;  
-}
-
-.bet-warning svg { color: #ff8800; flex-shrink: 0; margin-top: 1px; }
-
-.bet-info {  
-  background: #1a1a2e;  
-  color: #aabbff;  
-  border: 1px solid #6366f133;  
-}
-
-.bet-info svg { color: #6366f1; flex-shrink: 0; margin-top: 1px; }
-
-/* Bankroll Placeholder */  
-.bankroll-placeholder {  
-  text-align: center;  
-  padding: 2rem 1rem;  
-  color: #555;  
-  font-size: 0.95rem;  
-  border: 1px dashed #333;  
-  border-radius: 12px;  
-}
-
-/* ============================================  
-   Chart Card  
-   ============================================ */  
-.chart-card {  
-  padding: 1.5rem;  
-  margin-bottom: 2rem;  
-}
-
-/* ============================================  
-   Stats Grid  
-   ============================================ */  
-.stats-grid {  
-  display: grid;  
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));  
-  gap: 1.5rem;  
-  margin-bottom: 2rem;  
-}
-
-.stat-card {  
-  padding: 1.5rem;  
-  text-align: center;  
-  transition: transform 0.2s ease, border-color 0.2s ease;  
-}
-
-.stat-card:hover {  
-  transform: translateY(-4px);  
-  border-color: #f7931a;  
-}
-
-.stat-card svg { color: #f7931a; margin-bottom: 0.5rem; }
-
-.stat-card h3 {  
-  font-size: 2.2rem;  
-  margin: 0.5rem 0;  
-  line-height: 1.2;  
-}
-
-.stat-card p {  
-  margin: 0;  
-  color: #888;  
-  font-size: 0.95rem;  
-}
-
-/* ============================================  
-   Overview Card  
-   ============================================ */  
-.overview-card {  
-  padding: 1.5rem;  
-  margin-bottom: 2rem;  
-}
-
-.overview-card h2 {  
-  margin-top: 0;  
-  margin-bottom: 1.5rem;  
-  color: #f7931a;  
-  text-align: center;  
-}
-
-.overview-grid {  
-  display: grid;  
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));  
-  gap: 1rem;  
-  text-align: center;  
-}
-
-.overview-grid > div {  
-  background: #1f1f1f;  
-  padding: 1rem;  
-  border-radius: 12px;  
-  border: 1px solid #333;  
-  transition: transform 0.2s ease, border-color 0.2s ease;  
-}
-
-.overview-grid > div:hover {  
-  transform: translateY(-3px);  
-  border-color: #f7931a;  
-}
-
-.overview-grid p {  
-  color: #aaa;  
-  margin-bottom: 0.25rem;  
-  display: flex;  
-  justify-content: center;  
-  align-items: center;  
-  gap: 0.4rem;  
-  font-size: 0.9rem;  
-}
-
-.overview-grid p svg { color: #f7931a; width: 18px; height: 18px; }
-
-.overview-grid h3 {  
-  margin: 0;  
-  font-size: 2rem;  
-  color: #d0d0d0;  
-}
-
-.overview-wins { color: #00ff88 !important; }  
-.overview-losses { color: #ff4d4d !important; }  
-.overview-streak { color: #ffd700 !important; }  
-.overview-pending { color: #aaa !important; }  
-.overview-edge { color: #6366f1 !important; }
-
-/* ============================================  
-   Journal Card  
-   ============================================ */  
-.journal-card {  
-  padding: 1.5rem;  
-  background: #151515;  
-  border: 1px solid #282828;  
-  border-radius: 16px;  
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);  
-}
-
-.journal-card h2 {  
-  margin-top: 0;  
-  color: #f7931a;  
-}
-
-.journal-header {  
-  display: flex;  
-  flex-wrap: wrap;  
-  justify-content: space-between;  
-  align-items: center;  
-  margin-bottom: 1.5rem;  
-  gap: 1rem;  
-}
-
-.journal-controls {  
-  display: flex;  
-  flex-wrap: wrap;  
-  gap: 1rem;  
-  align-items: center;  
-}
-
-.journal-filters {  
-  display: flex;  
-  gap: 0.5rem;  
-  flex-wrap: wrap;  
-}
-
-.journal-filters button {  
-  background: #232323;  
-  color: white;  
-  border: none;  
-  border-radius: 8px;  
-  padding: 0.6rem 1rem;  
-  cursor: pointer;  
-  font-weight: 600;  
-  transition: background-color 0.2s, color 0.2s, transform 0.1s;  
-  flex-grow: 1;  
-  min-width: 80px;  
-  font-size: 0.85rem;  
-}
-
-.journal-filters button:hover:not(.active) { background: #3a3a3a; }
-
-.journal-filters button.active { background: #f7931a; color: black; }  
-.journal-filters button.filter-win.active { background: #00cc66; color: #000; }  
-.journal-filters button.filter-loss.active { background: #ff4d4d; color: #000; }  
-.journal-filters button.filter-pending.active { background: #888; color: #000; }
-
-/* Table */  
-.journal-table-wrapper {  
-  overflow-x: auto;  
-}
-
-table {  
-  width: 100%;  
-  border-collapse: collapse;  
-  min-width: 900px;  
-}
-
-th {  
-  color: #aaa;  
-  text-align: left;  
-  padding: 8px 6px 12px;  
-  font-weight: 600;  
-  font-size: 0.78rem;  
-  white-space: nowrap;  
-  text-transform: uppercase;  
-  letter-spacing: 0.3px;  
-}
-
-td {  
-  padding: 10px 6px;  
-  border-top: 1px solid #282828;  
-  color: #d0d0d0;  
-  font-size: 0.85rem;  
-  white-space: nowrap;  
-}
-
-tbody tr { transition: background-color 0.15s ease; }  
-tbody tr:hover { background: #1a1a1a; }
-
-.journal-row-win { border-left: 3px solid #00ff88; }  
-.journal-row-loss { border-left: 3px solid #ff4d4d; }  
-.journal-row-pending { border-left: 3px solid #666; }
-
-.signal-up { color: #00ff88; font-weight: 600; }  
-.signal-down { color: #ff4d4d; font-weight: 600; }
-
-/* Edge cell */  
-.edge-cell {  
-  font-weight: 700;  
-  font-size: 0.8rem;  
-  padding: 3px 8px;  
-  border-radius: 6px;  
-}
-
-.edge-cell-positive { color: #00ff88; background: rgba(0, 255, 136, 0.08); }  
-.edge-cell-negative { color: #ff4d4d; background: rgba(255, 77, 77, 0.08); }  
-.edge-cell-neutral { color: #888; }
-
-/* Action cell in journal */  
-.action-cell {  
-  font-size: 0.65rem;  
-  font-weight: bold;  
-  padding: 3px 8px;  
-  border-radius: 6px;  
-  white-space: nowrap;  
-  text-transform: uppercase;  
-  letter-spacing: 0.3px;  
-}
-
-/* Countdown cell */  
-.countdown-cell { white-space: nowrap; }
-
-.pending-timer {  
-  color: #f7931a;  
-  font-weight: 600;  
-  font-size: 0.8rem;  
-  font-variant-numeric: tabular-nums;  
-  background: #1a1a2e;  
-  padding: 4px 10px;  
-  border-radius: 6px;  
-  border: 1px solid #333;  
-}
-
-.graded-check {  
-  color: #00ff88;  
-  font-size: 1.1rem;  
-  font-weight: bold;  
-}
-
-/* ============================================  
-   Status Badges  
-   ============================================ */  
-.status-win, .status-loss, .status-pending {  
-  padding: 5px 12px;  
-  border-radius: 999px;  
-  font-size: 0.7rem;  
-  font-weight: bold;  
-  text-align: center;  
-  display: inline-flex;  
-  justify-content: center;  
-  align-items: center;  
-  min-width: 68px;  
-  text-transform: uppercase;  
-  letter-spacing: 0.5px;  
-}
-
-.status-win {  
-  background: #0d6b39;  
-  color: #b8ffb8;  
-  box-shadow: 0 0 8px rgba(0, 255, 136, 0.15);  
-}
-
-.status-loss {  
-  background: #8b0000;  
-  color: #ffb8b8;  
-  box-shadow: 0 0 8px rgba(255, 77, 77, 0.15);  
-}
-
-.status-pending {  
-  background: #444;  
-  color: #ccc;  
-  animation: pendingPulse 2s ease-in-out infinite;  
-}
-
-@keyframes pendingPulse {  
-  0%, 100% { opacity: 1; }  
-  50% { opacity: 0.5; }  
-}
-
-/* ============================================  
-   Buttons  
-   ============================================ */  
-.save-btn, .clear-btn, .export-btn {  
-  padding: 0.8rem 1.2rem;  
-  border: none;  
-  border-radius: 10px;  
-  cursor: pointer;  
-  font-weight: bold;  
-  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;  
-  white-space: nowrap;  
-  font-size: 1rem;  
-}
-
-.save-btn { background: #00aa55; color: white; }  
-.save-btn:hover:not(:disabled) {  
-  background: #008844;  
-  transform: translateY(-2px);  
-  box-shadow: 0 4px 12px rgba(0, 170, 85, 0.3);  
-}
-
-.export-btn { background: #f7931a; color: black; }  
-.export-btn:hover:not(:disabled) {  
-  background: #e08000;  
-  transform: translateY(-2px);  
-  box-shadow: 0 4px 12px rgba(247, 147, 26, 0.3);  
-}
-
-.clear-btn { background: #aa2222; color: white; }  
-.clear-btn:hover:not(:disabled) {  
-  background: #881111;  
-  transform: translateY(-2px);  
-  box-shadow: 0 4px 12px rgba(170, 34, 34, 0.3);  
-}
-
-.save-btn:disabled, .export-btn:disabled, .clear-btn:disabled {  
-  background: #333;  
-  color: #888;  
-  cursor: not-allowed;  
-  opacity: 0.6;  
-  transform: none;  
-  box-shadow: none;  
-}
-
-/* ============================================  
-   Responsive  
-   ============================================ */  
-@media (max-width: 1100px) {  
-  .timeframe-grid {  
-    grid-template-columns: repeat(2, 1fr);  
-  }
-
-  .confluence-stats {  
-    grid-template-columns: repeat(2, 1fr);  
-  }
-
-  .bankroll-stats-grid {  
-    grid-template-columns: repeat(2, 1fr);  
-  }  
-}
-
-@media (max-width: 900px) {  
-  .market-panel { grid-template-columns: 1fr; }
-
-  .overview-grid { grid-template-columns: 1fr 1fr; }
-
-  .journal-header {  
-    flex-direction: column;  
-    align-items: flex-start;  
-  }
-
-  .journal-controls {  
-    flex-direction: column;  
-    align-items: stretch;  
-    width: 100%;  
-  }
-
+  /* Stats Grid */  
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }  
+  .stat-card { padding: 1rem; }  
+  .stat-card h3 { font-size: 1.6rem; }
+
+  /* Overview */  
+  .overview-card { padding: 1rem; }  
+  .overview-grid { grid-template-columns: repeat(2, 1fr); }  
+  .overview-grid h3 { font-size: 1.6rem; }
+
+  /* Journal */  
+  .journal-card { padding: 1rem; }  
+  .journal-header { flex-direction: column; align-items: stretch; }  
+  .journal-controls { flex-direction: column; align-items: stretch; width: 100%; }  
   .journal-filters { width: 100%; }  
   .journal-filters button { flex-grow: 1; }
 
+  /* Buttons */  
   .button-row { flex-direction: column; }  
   .button-row button { width: 100%; }
 
-  .prediction-main { font-size: 3.5rem; }  
-  .btc-price { font-size: 2.3rem; }  
-  .yes-box h2, .no-box h2 { font-size: 2.8rem; }  
-  .stat-card h3 { font-size: 1.8rem; }
-
-  .grading-toast { left: 20px; right: 20px; top: 10px; }
-
-  .entry-details-grid {  
-    grid-template-columns: repeat(2, 1fr);  
-  }
-
-  .kalshi-input-row { flex-direction: column; }  
-  .kalshi-input { width: 100%; }  
-  .kalshi-set-btn, .kalshi-clear-btn { width: 100%; }
-
-  .bankroll-input-row { flex-direction: column; }  
-  .bankroll-input-wrapper { width: 100%; }  
-  .bankroll-input { width: 100%; }  
-  .bankroll-set-btn { width: 100%; }
-
-  .bet-rec-amount { font-size: 2.2rem; }  
-  .bet-rec-main { flex-direction: column; text-align: center; }
-
-  .entry-action-badge { font-size: 1.1rem; }  
+  /* Toast */  
+  .grading-toast { left: 10px; right: 10px; top: 10px; font-size: 0.85rem; }  
 }
 
-@media (max-width: 500px) {  
-  .app { padding: 1rem; }  
-  h1 { font-size: 2.5rem; }
+/* ============================================  
+   RESPONSIVE — SMALL MOBILE (max-width: 400px)  
+   ============================================ */  
+@media (max-width: 400px) {  
+  .app { padding: 0.5rem; }  
+  h1 { font-size: 1.7rem; }
 
-  .overview-grid { grid-template-columns: 1fr; }  
-  .journal-filters { flex-direction: column; }
+  .prediction-main { font-size: 2.2rem; }  
+  .btc-price { font-size: 1.6rem; }  
+  .yes-box h2, .no-box h2 { font-size: 2rem; }
+
+  .side-market { flex-direction: column; }
 
   .timeframe-grid { grid-template-columns: 1fr; }  
   .confluence-stats { grid-template-columns: 1fr; }  
   .bankroll-stats-grid { grid-template-columns: 1fr; }  
-  .entry-details-grid { grid-template-columns: 1fr; }
+  .entry-details-grid { grid-template-columns: 1fr; }  
+  .stats-grid { grid-template-columns: 1fr; }  
+  .overview-grid { grid-template-columns: 1fr; }
 
-  .entry-action-badge { font-size: 0.95rem; padding: 1rem; }  
-  .ed-value { font-size: 1.4rem; }  
+  .entry-action-badge { font-size: 0.85rem; }
+
+  .journal-filters { flex-direction: column; }
+
+  .rec-stats { flex-direction: column; align-items: center; }  
 }  
