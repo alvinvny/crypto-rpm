@@ -1,23 +1,32 @@
-# CryptoRPM
+# React + TypeScript + Vite
 
-CryptoRPM is a Bitcoin market telemetry dashboard focused on real-time momentum analysis and 15-minute directional forecasting.
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-## Vision
+Currently, two official plugins are available:
 
-Just as RPM measures engine speed, CryptoRPM measures market momentum.
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Planned Features
+## React Compiler
 
-- Real-time Bitcoin price tracking
-- RPM momentum score
-- Engine status indicator
-- 15-minute market forecasts
-- Historical prediction accuracy
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Engine States
+## Expanding the Oxlint configuration
 
-- Idle
-- Cruise
-- Sport
-- Turbo
-- Redline
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+
+```json
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
+```
+
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.

@@ -1,0 +1,325 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0a0a0a;
+  color: white;
+  font-family: Inter, Arial, sans-serif;
+}
+
+.loading {
+  height: 100vh;
+  display: grid;
+  place-items: center;
+}
+
+.app {
+  max-width: 1500px;
+  margin: auto;
+  padding: 1.5rem;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  color: orange;
+  font-size: 3rem;
+  margin: 0;
+}
+
+.subtitle {
+  color: #888;
+  margin-top: 0.25rem;
+}
+
+.market-panel {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.main-market,
+.side-market,
+.chart-card,
+.stat-card,
+.journal-card,
+.overview-card {
+  background: #151515;
+  border: 1px solid #282828;
+  border-radius: 16px;
+}
+
+.main-market {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.question {
+  color: #888;
+  font-size: 0.95rem;
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+}
+
+.prediction-main {
+  font-size: 4.5rem;
+  color: #00ff88;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 1.5rem;
+}
+
+.btc-price {
+  font-size: 2.8rem;
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+}
+
+.countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #d0d0d0;
+}
+
+.side-market {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.yes-box,
+.no-box {
+  flex: 1;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.yes-box {
+  background: #0f4224;
+}
+
+.no-box {
+  background: #4a1111;
+}
+
+.yes-box h2,
+.no-box h2 {
+  font-size: 3rem;
+  margin: 0.75rem 0 0;
+}
+
+.chart-card {
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.chart-stats {
+  display: flex;
+  gap: 1rem;
+  color: #aaa;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.timeframe-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.timeframe-buttons button {
+  background: #232323;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.timeframe-buttons button:hover {
+  background: orange;
+  color: black;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(220px, 1fr)
+  );
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.stat-card {
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.stat-card svg {
+  color: orange;
+}
+
+.stat-card h3 {
+  font-size: 2rem;
+  margin: 0.5rem 0;
+}
+
+.stat-card p {
+  margin: 0;
+  color: #888;
+}
+
+.overview-card {
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  text-align: center;
+}
+
+.overview-grid p {
+  color: #888;
+  margin-bottom: 0.25rem;
+}
+
+.overview-grid h3 {
+  margin: 0;
+}
+
+.journal-card {
+  padding: 1.5rem;
+}
+
+.journal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  color: #888;
+  text-align: left;
+  padding-bottom: 0.75rem;
+}
+
+td {
+  padding: 12px 0;
+  border-top: 1px solid #282828;
+}
+
+.button-row {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.save-btn,
+.clear-btn,
+.export-btn,
+.demo-btn {
+  padding: 0.75rem 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.save-btn {
+  background: #00aa55;
+  color: white;
+}
+
+.export-btn {
+  background: orange;
+  color: black;
+}
+
+.clear-btn {
+  background: #aa2222;
+  color: white;
+}
+
+.demo-btn {
+  background: orange;
+  color: black;
+}
+
+.status-win {
+  background: #0d6b39;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.status-loss {
+  background: #a32929;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.status-pending {
+  background: #666;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+@media (max-width: 900px) {
+  .market-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .prediction-main {
+    font-size: 3.5rem;
+  }
+
+  .btc-price {
+    font-size: 2.3rem;
+  }
+}.export-btn {
+  background: orange;
+  color: black;
+}
