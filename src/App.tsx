@@ -171,7 +171,7 @@ function App() {
   // Multi-timeframe data  
   const [rawPrices1h, setRawPrices1h] = useState<number[]>([]);  
   const [rawPrices4h, setRawPrices4h] = useState<number[]>([]);  
-  const [rawPrices24h, setRawPrices24h] = useState<number[]>([]);
+  const [_rawPrices24h, setRawPrices24h] = useState<number[]>([]);
 
   // Price history for momentum tracking  
   const priceHistory = useRef<number[]>([]);
@@ -550,9 +550,9 @@ function App() {
   const bullishCount = allSignals.filter(  
     (s) => s.direction === "UP"  
   ).length;  
-  const bearishCount = allSignals.filter(  
-    (s) => s.direction === "DOWN"  
-  ).length;  
+  //const bearishCount = allSignals.filter(  
+   // (s) => s.direction === "DOWN"  
+  //).length;  
   const confluenceScore = Math.round(  
     (bullishCount / allSignals.length) * 100  
   );
