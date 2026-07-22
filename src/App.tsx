@@ -40,6 +40,9 @@ import {
   ArrowDown,  
   SkipForward,  
   Navigation,  
+  Wifi,  
+  WifiOff,  
+  RefreshCw,  
 } from "lucide-react";
 
 import "./App.css";
@@ -101,6 +104,23 @@ interface PredictionRecord {
   betSide?: "UP" | "DOWN" | "SKIP";  
 }
 
+interface KalshiMarket {  
+  ticker: string;  
+  event_ticker: string;  
+  yes_ask_dollars: string;  
+  no_ask_dollars: string;  
+  yes_bid_dollars: string;  
+  no_bid_dollars: string;  
+  last_price_dollars: string;  
+  close_time: string;  
+  status: string;  
+  floor_strike?: number;  
+  cap_strike?: number;  
+  yes_sub_title: string;  
+  no_sub_title: string;  
+  volume_24h_fp: string;  
+}
+
 // ============================================  
 // HELPER FUNCTIONS  
 // ============================================
@@ -113,10 +133,7 @@ function calculateChange(prices: number[]): number {
 }
 
 function calculateConfidence(change: number): number {  
-  return Math.min(  
-    95,  
-    Math.max(51, Math.round(55 + Math.abs(change) * 20))  
-  );  
+  return Math.min(95, Math.max(51, Math.round(55 + Math.abs(change) * 20)));  
 }
 
 function calculateDirection(change: number): "UP" | "DOWN" {  
@@ -132,7 +149,21 @@ function getKellyFraction(
   const b = avgWinAmount / avgLossAmount;  
   const kelly = (winRate * b - (1 - winRate)) / b;  
   return Math.max(0, Math.min(0.25, kelly));  
-}  // ============================================  
+}
+
+function dollarsToCents(dollarStr: string): number {  
+  const val = parseFloat(dollarStr);  
+  if (isNaN(val)) return 0;  
+  return Math.round(val * 100);  
+}
+
+// ============================================  
+// KALSHI API CONFIG  
+// ============================================  
+const KALSHI_BASE = "/kalshi-api";  
+const BTC_SERIES_TICKERS = ["KXBTC15M", "KXBTCD", "KXBTC"];
+
+// ============================================  
 // MAIN APP  
 // ============================================
 
@@ -140,24 +171,29 @@ function App() {
   const [btcPrice, setBtcPrice] = useState<number | null>(null);  
   const [prevBtcPrice, setPrevBtcPrice] = useState<number | null>(null);  
   const [chartData, setChartData] = useState<ChartPoint[]>([]);  
+  const [liveChartData, setLiveChartData] = useState<ChartPoint[]>([]);  
   const [timeLeft, setTimeLeft] = useState("");  
   const [gradingMessage, setGradingMessage] = useState<string | null>(null);
 
-  // v8.0 — Kalshi Target Mode  
+  // Target Mode — no localStorage caching, always from Kalshi  
   const [targetPriceInput, setTargetPriceInput] = useState<string>("");  
-  const [targetPrice, setTargetPrice] = useState<number | null>(() => {  
-    const saved = localStorage.getItem("cryptoRPMTarget");  
-    return saved ? parseFloat(saved) : null;  
-  });
+  const [targetPrice, setTargetPrice] = useState<number | null>(null);
 
   const [kalshiUpInput, setKalshiUpInput] = useState<string>("");  
   const [kalshiDownInput, setKalshiDownInput] = useState<string>("");  
   const [kalshiUp, setKalshiUp] = useState<number | null>(null);  
   const [kalshiDown, setKalshiDown] = useState<number | null>(null);
 
-  // Legacy Kalshi YES input (kept for Smart Entry panel)  
+  // Legacy Kalshi YES input  
   const [kalshiYesInput, setKalshiYesInput] = useState<string>("");  
   const [kalshiYes, setKalshiYes] = useState<number | null>(null);
+
+  // Kalshi API state  
+  const [kalshiConnected, setKalshiConnected] = useState<boolean>(false);  
+  const [kalshiLastUpdate, setKalshiLastUpdate] = useState<string>("");  
+  const [kalshiMarketTicker, setKalshiMarketTicker] = useState<string>("");  
+  const [kalshiCloseTime, setKalshiCloseTime] = useState<string>("");  
+  const [kalshiError, setKalshiError] = useState<string | null>(null);
 
   // Bankroll state  
   const [bankrollInput, setBankrollInput] = useState<string>(() => {  
@@ -184,9 +220,7 @@ function App() {
       return parsed.map((entry: any) => ({  
         ...entry,  
         initialPrice:  
-          entry.initialPrice !== undefined  
-            ? entry.initialPrice  
-            : entry.price,  
+          entry.initialPrice !== undefined ? entry.initialPrice : entry.price,  
         predictionTimestamp:  
           entry.predictionTimestamp !== undefined  
             ? entry.predictionTimestamp  
@@ -226,42 +260,60 @@ function App() {
     }  
   }, [bankroll]);
 
+  // Live chart — add a point every time btcPrice changes  
   useEffect(() => {  
-    if (targetPrice !== null) {  
-      localStorage.setItem("cryptoRPMTarget", targetPrice.toString());  
-    } else {  
-      localStorage.removeItem("cryptoRPMTarget");  
-    }  
-  }, [targetPrice]);
+    if (btcPrice === null) return;  
+    const now = new Date();  
+    const timeStr = now.toLocaleTimeString([], {  
+      hour: "2-digit",  
+      minute: "2-digit",  
+      second: "2-digit",  
+    });  
+    setLiveChartData((prev) => {  
+      const newPoint = { time: timeStr, price: btcPrice };  
+      const updated = [...prev, newPoint].slice(-120);  
+      return updated;  
+    });  
+  }, [btcPrice]);
 
   // ============================================  
-  // DATA LOADING — price every 10s, chart every 60s  
+  // DATA LOADING  
   // ============================================
 
   const loadPrice = useCallback(async () => {  
-    try {  
-      const priceResponse = await fetch(  
-        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"  
-      );  
-      if (!priceResponse.ok)  
-        throw new Error(`Price fetch failed: ${priceResponse.statusText}`);  
-      const priceData = await priceResponse.json();  
-      const newPrice = priceData.bitcoin.usd;
-
+  try {  
+    const response = await fetch(  
+      "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"  
+    );  
+    if (response.ok) {  
+      const data = await response.json();  
+      const newPrice = parseFloat(data.price);  
       setBtcPrice((prev) => {  
         setPrevBtcPrice(prev);  
         return newPrice;  
-      });
-
-      // Track price history for momentum  
-      priceHistory.current = [  
-        ...priceHistory.current.slice(-9),  
-        newPrice,  
-      ];  
-    } catch (error) {  
-      console.error("Error fetching price:", error);  
+      });  
+      priceHistory.current = [...priceHistory.current.slice(-59), newPrice];  
+      return;  
     }  
-  }, []);
+  } catch (e) {  
+    // fallback  
+  }  
+  try {  
+    const priceResponse = await fetch(  
+      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"  
+    );  
+    if (!priceResponse.ok) throw new Error("Price fetch failed");  
+    const priceData = await priceResponse.json();  
+    const newPrice = priceData.bitcoin.usd;  
+    setBtcPrice((prev) => {  
+      setPrevBtcPrice(prev);  
+      return newPrice;  
+    });  
+    priceHistory.current = [...priceHistory.current.slice(-59), newPrice];  
+  } catch (error) {  
+    console.error("Error fetching price:", error);  
+  }  
+}, []);  
 
   const loadChartData = useCallback(async () => {  
     try {  
@@ -274,7 +326,6 @@ function App() {
         );  
       const chart1dJson = await chart1dResponse.json();
 
-      // Format chart data (last 48 points for display)  
       const formatted = chart1dJson.prices  
         .slice(-48)  
         .map((item: number[]) => ({  
@@ -286,7 +337,6 @@ function App() {
         }));  
       setChartData(formatted);
 
-      // Extract raw prices for multi-timeframe analysis  
       const allPrices1d: number[] = chart1dJson.prices.map(  
         (p: number[]) => p[1]  
       );
@@ -300,7 +350,175 @@ function App() {
   }, []);
 
   // ============================================  
-  // AUTO-GRADING — now supports target-based grading  
+  // KALSHI API  
+  // ============================================
+
+  const loadKalshiData = useCallback(async () => {  
+    if (!btcPrice || btcPrice === 0) {  
+      console.log("⏳ Waiting for BTC price before loading Kalshi...");  
+      return;  
+    }
+
+    let found = false;
+
+    for (const seriesTicker of BTC_SERIES_TICKERS) {  
+      if (found) break;
+
+      try {  
+        const eventsRes = await fetch(  
+          `${KALSHI_BASE}/events?status=open&series_ticker=${seriesTicker}&with_nested_markets=true&limit=50`  
+        );
+
+        if (!eventsRes.ok) continue;  
+        const eventsData = await eventsRes.json();
+
+        if (!eventsData.events || eventsData.events.length === 0) continue;
+
+        const now = new Date();
+
+        const allMarkets: Array<{  
+          market: KalshiMarket;  
+          closeTime: Date;  
+          strike: number | null;  
+          strikeDistance: number;  
+          minutesUntilClose: number;  
+        }> = [];
+
+        for (const event of eventsData.events) {  
+          if (!event.markets) continue;
+
+          for (const market of event.markets) {  
+            if (  
+              market.status !== "active" &&  
+              market.status !== "open" &&  
+              market.status !== "initialized"  
+            )  
+              continue;
+
+            const closeTime = new Date(market.close_time);  
+            if (closeTime <= now) continue;
+
+            const strike = market.floor_strike || market.cap_strike || null;  
+            const strikeDistance = strike  
+              ? Math.abs(btcPrice - strike)  
+              : 999999;  
+            const minutesUntilClose =  
+              (closeTime.getTime() - now.getTime()) / 60000;
+
+            allMarkets.push({  
+              market: market as KalshiMarket,  
+              closeTime,  
+              strike,  
+              strikeDistance,  
+              minutesUntilClose,  
+            });  
+          }  
+        }
+
+        if (allMarkets.length === 0) continue;
+
+        const closeTimeGroups = new Map<string, typeof allMarkets>();  
+        for (const m of allMarkets) {  
+          const key = m.closeTime.toISOString();  
+          if (!closeTimeGroups.has(key)) {  
+            closeTimeGroups.set(key, []);  
+          }  
+          closeTimeGroups.get(key)!.push(m);  
+        }
+
+        const sortedGroups = Array.from(closeTimeGroups.entries()).sort(  
+          (a, b) => new Date(a[0]).getTime() - new Date(b[0]).getTime()  
+        );
+
+        const nextExpiryGroup = sortedGroups[0];  
+        if (!nextExpiryGroup) continue;
+
+        const nextExpiryMarkets = nextExpiryGroup[1];
+
+        nextExpiryMarkets.sort((a, b) => a.strikeDistance - b.strikeDistance);
+
+        const best = nextExpiryMarkets[0];  
+        const bestMarket = best.market;  
+        const bestCloseTime = best.closeTime;
+
+        found = true;
+
+        const yesAsk = dollarsToCents(bestMarket.yes_ask_dollars);  
+        const noAsk = dollarsToCents(bestMarket.no_ask_dollars);  
+        const yesBid = dollarsToCents(bestMarket.yes_bid_dollars);  
+        const noBid = dollarsToCents(bestMarket.no_bid_dollars);
+
+        const upPrice = yesAsk > 0 ? yesAsk : yesBid;  
+        const downPrice = noAsk > 0 ? noAsk : noBid;
+
+        if (upPrice > 0 && upPrice <= 99) {  
+          setKalshiUp(upPrice);  
+          setKalshiUpInput(upPrice.toString());  
+        } else {  
+          setKalshiUp(null);  
+          setKalshiUpInput("");  
+        }
+
+        if (downPrice > 0 && downPrice <= 99) {  
+          setKalshiDown(downPrice);  
+          setKalshiDownInput(downPrice.toString());  
+        } else {  
+          setKalshiDown(null);  
+          setKalshiDownInput("");  
+        }
+
+        const strike = best.strike;  
+        if (strike && strike > 0) {  
+          setTargetPrice(strike);  
+          setTargetPriceInput(strike.toString());  
+        }
+
+        setKalshiConnected(true);  
+        setKalshiLastUpdate(  
+          new Date().toLocaleTimeString([], {  
+            hour: "2-digit",  
+            minute: "2-digit",  
+            second: "2-digit",  
+          })  
+        );  
+        setKalshiMarketTicker(bestMarket.ticker);  
+        setKalshiCloseTime(  
+          bestCloseTime  
+            ? bestCloseTime.toLocaleTimeString([], {  
+                hour: "2-digit",  
+                minute: "2-digit",  
+              })  
+            : ""  
+        );  
+        setKalshiError(null);
+
+        console.log("✅ Kalshi picked:", {  
+          ticker: bestMarket.ticker,  
+          strike,  
+          btcPrice,  
+          strikeDistance: Math.round(best.strikeDistance),  
+          upPrice,  
+          downPrice,  
+          closesIn: Math.round(best.minutesUntilClose) + "min",  
+          nextExpiry: bestCloseTime.toLocaleTimeString(),  
+          totalStrikes: nextExpiryMarkets.length,  
+          allTimeWindows: sortedGroups.length,  
+        });  
+      } catch (error) {  
+        console.error(`Kalshi fetch error (${seriesTicker}):`, error);  
+      }  
+    }
+
+    if (!found) {  
+      setKalshiConnected(false);  
+      setKalshiError(  
+        "No active BTC 15-min contracts found. Markets may be closed."  
+      );  
+    }  
+  }, [btcPrice]);
+
+  // ============================================  
+  // AUTO-GRADING  
   // ============================================
 
   const autoGradePredictions = useCallback(async () => {  
@@ -321,8 +539,7 @@ function App() {
       const priceResponse = await fetch(  
         "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"  
       );  
-      if (!priceResponse.ok)  
-        throw new Error("Grading price fetch failed");  
+      if (!priceResponse.ok) throw new Error("Grading price fetch failed");  
       const priceData = await priceResponse.json();  
       currentBtcPrice = priceData.bitcoin.usd;  
     } catch (error) {  
@@ -349,7 +566,6 @@ function App() {
         ) {  
           let newStatus: "WIN" | "LOSS" = "LOSS";
 
-          // v8.0: Target-based grading  
           if (  
             entry.targetPrice &&  
             entry.betSide &&  
@@ -362,19 +578,16 @@ function App() {
               newStatus = !isAbove ? "WIN" : "LOSS";  
             }  
           } else {  
-            // Legacy grading  
             if (  
               entry.signal.includes("UP") ||  
               entry.signal.includes("ABOVE")  
             ) {  
-              newStatus =  
-                finalPrice > entry.initialPrice ? "WIN" : "LOSS";  
+              newStatus = finalPrice > entry.initialPrice ? "WIN" : "LOSS";  
             } else if (  
               entry.signal.includes("DOWN") ||  
               entry.signal.includes("BELOW")  
             ) {  
-              newStatus =  
-                finalPrice < entry.initialPrice ? "WIN" : "LOSS";  
+              newStatus = finalPrice < entry.initialPrice ? "WIN" : "LOSS";  
             }  
           }
 
@@ -393,27 +606,82 @@ function App() {
   }, []);
 
   // ============================================  
-  // INTERVALS — v8.0: price every 10s  
+  // INTERVALS  
   // ============================================
 
-  useEffect(() => {  
-    loadPrice();  
-    loadChartData();  
-    autoGradePredictions();
+useEffect(() => {  
+  loadPrice();  
+  loadChartData();  
+  autoGradePredictions();  
+  loadKalshiData();
 
-    // Price updates every 10 seconds (6x faster)  
-    const priceInterval = setInterval(loadPrice, 10000);  
-    // Chart data every 60 seconds  
-    const chartInterval = setInterval(loadChartData, 60000);  
-    // Grade check every 15 seconds  
-    const gradeInterval = setInterval(autoGradePredictions, 15000);
+  // WebSocket through Vite proxy  
+  let ws: WebSocket | null = null;  
+  let wsRetryTimeout: ReturnType<typeof setTimeout> | null = null;  
+  let wsConnected = false;
 
-    return () => {  
-      clearInterval(priceInterval);  
-      clearInterval(chartInterval);  
-      clearInterval(gradeInterval);  
-    };  
-  }, [loadPrice, loadChartData, autoGradePredictions]);
+  const connectWebSocket = () => {  
+    try {  
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";  
+      const wsUrl = `${protocol}//${window.location.host}/binance-ws/ws/btcusdt@aggTrade`;  
+        
+      console.log("🔌 Connecting WebSocket to:", wsUrl);  
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {  
+        console.log("✅ Binance WebSocket connected — real-time price active");  
+        wsConnected = true;  
+      };
+
+      ws.onmessage = (event) => {  
+        try {  
+          const data = JSON.parse(event.data);  
+          const newPrice = parseFloat(data.p);  
+          if (newPrice > 0) {  
+            setBtcPrice((prev) => {  
+              setPrevBtcPrice(prev);  
+              return newPrice;  
+            });  
+            priceHistory.current = [...priceHistory.current.slice(-59), newPrice];  
+          }  
+        } catch (e) {  
+          // ignore parse errors  
+        }  
+      };
+
+      ws.onclose = () => {  
+        console.log("WebSocket closed, reconnecting in 5s...");  
+        wsConnected = false;  
+        wsRetryTimeout = setTimeout(connectWebSocket, 5000);  
+      };
+
+      ws.onerror = (err) => {  
+        console.log("WebSocket error:", err);  
+        wsConnected = false;  
+        if (ws) ws.close();  
+      };  
+    } catch (e) {  
+      console.log("WebSocket setup failed, using polling only");  
+    }  
+  };
+
+  connectWebSocket();
+
+  // Polling fallback — always runs, covers WebSocket failures  
+  const priceInterval = setInterval(loadPrice, wsConnected ? 5000 : 1000);  
+  const chartInterval = setInterval(loadChartData, 60000);  
+  const gradeInterval = setInterval(autoGradePredictions, 15000);  
+  const kalshiInterval = setInterval(loadKalshiData, 10000);
+
+  return () => {  
+    if (ws) ws.close();  
+    if (wsRetryTimeout) clearTimeout(wsRetryTimeout);  
+    clearInterval(priceInterval);  
+    clearInterval(chartInterval);  
+    clearInterval(gradeInterval);  
+    clearInterval(kalshiInterval);  
+  };  
+}, [loadPrice, loadChartData, autoGradePredictions, loadKalshiData]);  
 
   // Countdown timer  
   useEffect(() => {  
@@ -437,8 +705,10 @@ function App() {
 
   if (!chartData.length || btcPrice === null) {  
     return <div className="loading">Loading CryptoRPM...</div>;  
-  }    // ============================================  
-  // v8.0 TARGET MODE CALCULATIONS  
+  }
+
+  // ============================================  
+  // TARGET MODE CALCULATIONS  
   // ============================================
 
   const distanceDollar =  
@@ -447,10 +717,8 @@ function App() {
     targetPrice !== null && targetPrice > 0  
       ? ((btcPrice - targetPrice) / targetPrice) * 100  
       : null;  
-  const isAboveTarget =  
-    distanceDollar !== null ? distanceDollar > 0 : null;
+  const isAboveTarget = distanceDollar !== null ? distanceDollar > 0 : null;
 
-  // Price flash direction  
   const priceDirection =  
     prevBtcPrice !== null  
       ? btcPrice > prevBtcPrice  
@@ -460,25 +728,16 @@ function App() {
         : "same"  
       : "same";
 
-  // Momentum: is price moving toward or away from target?  
   const getMomentum = () => {  
     const history = priceHistory.current;  
     if (history.length < 3 || targetPrice === null)  
-      return {  
-        direction: "neutral",  
-        label: "CALCULATING",  
-        speed: "—",  
-      };
+      return { direction: "neutral", label: "CALCULATING", speed: "—" };
 
     const recent = history.slice(-3);  
-    const distancesFromTarget = recent.map((p) =>  
-      Math.abs(p - targetPrice)  
-    );
+    const distancesFromTarget = recent.map((p) => Math.abs(p - targetPrice));
 
-    const movingToward =  
-      distancesFromTarget[2] < distancesFromTarget[0];  
-    const movingAway =  
-      distancesFromTarget[2] > distancesFromTarget[0];
+    const movingToward = distancesFromTarget[2] < distancesFromTarget[0];  
+    const movingAway = distancesFromTarget[2] > distancesFromTarget[0];
 
     const priceChange = Math.abs(recent[2] - recent[0]);  
     let speed = "SLOW";  
@@ -486,24 +745,16 @@ function App() {
     else if (priceChange > 20) speed = "MODERATE";
 
     if (movingToward)  
-      return {  
-        direction: "toward",  
-        label: "→ TOWARD TARGET",  
-        speed,  
-      };  
+      return { direction: "toward", label: "→ TOWARD TARGET", speed };  
     if (movingAway)  
-      return {  
-        direction: "away",  
-        label: "← AWAY FROM TARGET",  
-        speed,  
-      };  
+      return { direction: "away", label: "← AWAY FROM TARGET", speed };  
     return { direction: "sideways", label: "↔ SIDEWAYS", speed };  
   };
 
   const momentum = getMomentum();
 
   // ============================================  
-  // MULTI-TIMEFRAME SIGNALS (v5.0)  
+  // MULTI-TIMEFRAME SIGNALS  
   // ============================================
 
   const buildSignal = (  
@@ -546,13 +797,7 @@ function App() {
     signal4h,  
   ];
 
-  // Confluence calculation  
-  const bullishCount = allSignals.filter(  
-    (s) => s.direction === "UP"  
-  ).length;  
-  //const bearishCount = allSignals.filter(  
-   // (s) => s.direction === "DOWN"  
-  //).length;  
+  const bullishCount = allSignals.filter((s) => s.direction === "UP").length;  
   const confluenceScore = Math.round(  
     (bullishCount / allSignals.length) * 100  
   );
@@ -576,32 +821,23 @@ function App() {
   const confluenceLabel = getConfluenceLabel(confluenceScore);  
   const starRating = getStarRating(confluenceScore);
 
-  // Weighted fair value  
   const weights = [1, 2, 3, 4];  
   const totalWeight = weights.reduce((a, b) => a + b, 0);  
   const weightedConfidence = Math.round(  
     allSignals.reduce((sum, signal, i) => {  
-      const directionMultiplier =  
-        signal.direction === "UP" ? 1 : -1;  
-      return (  
-        sum +  
-        signal.confidence * directionMultiplier * weights[i]  
-      );  
+      const directionMultiplier = signal.direction === "UP" ? 1 : -1;  
+      return sum + signal.confidence * directionMultiplier * weights[i];  
     }, 0) / totalWeight  
   );  
-  const fairValue = Math.min(  
-    95,  
-    Math.max(5, 50 + weightedConfidence / 2)  
-  );
+  const fairValue = Math.min(95, Math.max(5, 50 + weightedConfidence / 2));
 
   // ============================================  
-  // PRIMARY METRICS (from 15m signal)  
+  // PRIMARY METRICS  
   // ============================================
 
   const firstPrice = chartData[0].price;  
   const lastPrice = chartData[chartData.length - 1].price;  
-  const change =  
-    ((lastPrice - firstPrice) / firstPrice) * 100;  
+  const change = ((lastPrice - firstPrice) / firstPrice) * 100;  
   const prediction = change >= 0 ? "UP ⬆" : "DOWN ⬇";  
   const confidence = signal15m.confidence;  
   const rpm = Math.max(  
@@ -616,7 +852,7 @@ function App() {
   const volatility = Math.round(Math.abs(change) * 20);
 
   // ============================================  
-  // v8.0 TARGET PREDICTION  
+  // TARGET PREDICTION  
   // ============================================
 
   const getTargetPrediction = (): {  
@@ -629,81 +865,60 @@ function App() {
       distanceDollar === null ||  
       distancePercent === null  
     ) {  
-      return {  
-        side: "SKIP",  
-        confidence: 0,  
-        reason: "No target set",  
-      };  
+      return { side: "SKIP", confidence: 0, reason: "No target set" };  
     }
 
     const absDistPercent = Math.abs(distancePercent);
 
-    // Base confidence from distance  
     let baseConfidence: number;  
     if (absDistPercent > 0.5) baseConfidence = 85;  
     else if (absDistPercent > 0.2) baseConfidence = 72;  
     else if (absDistPercent > 0.1) baseConfidence = 62;  
     else baseConfidence = 53;
 
-    // Adjust by momentum  
     let momentumBonus = 0;  
     if (momentum.direction === "toward") momentumBonus = -5;  
     if (momentum.direction === "away") momentumBonus = 5;
 
-    // Adjust by confluence  
     const confluenceBonus = (confluenceScore - 50) / 10;
 
     const adjustedConfidence = Math.min(  
       95,  
       Math.max(  
         51,  
-        Math.round(  
-          baseConfidence + momentumBonus + confluenceBonus  
-        )  
+        Math.round(baseConfidence + momentumBonus + confluenceBonus)  
       )  
     );
 
     if (isAboveTarget) {  
-      if (  
-        momentum.direction === "toward" &&  
-        absDistPercent < 0.05  
-      ) {  
+      if (momentum.direction === "toward" && absDistPercent < 0.05) {  
         return {  
           side: "SKIP",  
           confidence: adjustedConfidence,  
-          reason:  
-            "Too close to target + moving toward it",  
+          reason: "Too close to target + moving toward it",  
         };  
       }  
       return {  
         side: "UP",  
         confidence: adjustedConfidence,  
-        reason: `Price is $${Math.abs(  
-          distanceDollar  
-        ).toFixed(2)} above target (${absDistPercent.toFixed(  
-          3  
-        )}%)`,  
+        reason: `Price is $${Math.abs(distanceDollar).toFixed(  
+          2  
+        )} above target (${absDistPercent.toFixed(3)}%)`,  
       };  
     } else {  
-      if (  
-        momentum.direction === "toward" &&  
-        absDistPercent < 0.05  
-      ) {  
+      if (momentum.direction === "toward" && absDistPercent < 0.05) {  
         return {  
           side: "SKIP",  
           confidence: adjustedConfidence,  
-          reason:  
-            "Too close to target + moving toward it",  
+          reason: "Too close to target + moving toward it",  
         };  
       }  
       return {  
         side: "DOWN",  
         confidence: adjustedConfidence,  
-        reason: `Price is $${Math.abs(  
-          distanceDollar  
-        ).toFixed(2)} below target (${absDistPercent.toFixed(  
-          3  
-        )}%)`,  
+        reason: `Price is $${Math.abs(distanceDollar).toFixed(  
+          2  
+        )} below target (${absDistPercent.toFixed(3)}%)`,  
       };  
     }  
   };
@@ -711,7 +926,7 @@ function App() {
   const targetPrediction = getTargetPrediction();
 
   // ============================================  
-  // v8.0 RECOMMENDATION ENGINE  
+  // RECOMMENDATION ENGINE  
   // ============================================
 
   const getRecommendation = (): {  
@@ -723,12 +938,15 @@ function App() {
   } => {  
     if (targetPrice === null) {  
       return {  
-        action: "SET TARGET PRICE",  
+        action: kalshiConnected  
+          ? "LOADING TARGET FROM KALSHI..."  
+          : "SET TARGET PRICE",  
         color: "action-neutral",  
         edge: null,  
         betSide: "SKIP",  
-        explanation:  
-          "Enter the Kalshi TO BEAT price to get recommendations",  
+        explanation: kalshiConnected  
+          ? "Waiting for Kalshi data..."  
+          : "Enter the Kalshi TO BEAT price to get recommendations",  
       };  
     }
 
@@ -742,12 +960,9 @@ function App() {
       };  
     }
 
-    // If we have Kalshi Up/Down prices  
     if (kalshiUp !== null && kalshiDown !== null) {  
       if (targetPrediction.side === "UP") {  
-        const edgeOnUp =  
-          targetPrediction.confidence - kalshiUp;
-
+        const edgeOnUp = targetPrediction.confidence - kalshiUp;  
         if (edgeOnUp >= 20)  
           return {  
             action: `🟢 STRONG BUY UP @ ${kalshiUp}¢`,  
@@ -780,10 +995,7 @@ function App() {
           explanation: `Edge too small (${Math.round(edgeOnUp)}%). Wait for better pricing.`,  
         };  
       } else {  
-        // targetPrediction.side === "DOWN"  
-        const edgeOnDown =  
-          targetPrediction.confidence - kalshiDown;
-
+        const edgeOnDown = targetPrediction.confidence - kalshiDown;  
         if (edgeOnDown >= 20)  
           return {  
             action: `🔴 STRONG BUY DOWN @ ${kalshiDown}¢`,  
@@ -818,16 +1030,12 @@ function App() {
       }  
     }
 
-    // No Kalshi prices — directional guidance only  
     return {  
       action:  
         targetPrediction.side === "UP"  
           ? "PREDICTION: ABOVE TARGET ⬆"  
           : "PREDICTION: BELOW TARGET ⬇",  
-      color:  
-        targetPrediction.side === "UP"  
-          ? "action-buy"  
-          : "action-sell",  
+      color: targetPrediction.side === "UP" ? "action-buy" : "action-sell",  
       edge: null,  
       betSide: targetPrediction.side,  
       explanation: `${targetPrediction.reason}. Enter Kalshi prices for edge calculation.`,  
@@ -837,12 +1045,11 @@ function App() {
   const recommendation = getRecommendation();
 
   // ============================================  
-  // SMART ENTRY SIGNAL (v6.0 — legacy)  
+  // SMART ENTRY SIGNAL (legacy)  
   // ============================================
 
   const buildEntrySignal = (): EntrySignal => {  
-    const edge =  
-      kalshiYes !== null ? fairValue - kalshiYes : null;  
+    const edge = kalshiYes !== null ? fairValue - kalshiYes : null;  
     let riskReward: number | null = null;  
     let potentialProfit: number | null = null;  
     let potentialLoss: number | null = null;
@@ -851,33 +1058,25 @@ function App() {
       const kalshiCents = kalshiYes;  
       potentialProfit = 100 - kalshiCents;  
       potentialLoss = kalshiCents;  
-      riskReward =  
-        potentialLoss > 0  
-          ? potentialProfit / potentialLoss  
-          : 0;  
+      riskReward = potentialLoss > 0 ? potentialProfit / potentialLoss : 0;  
     }
 
     let action: EntrySignal["action"] = "NEUTRAL";
 
     if (edge !== null) {  
-      if (edge >= 25 && confluenceScore >= 75)  
-        action = "STRONG BUY YES";  
-      else if (edge >= 15 && confluenceScore >= 50)  
-        action = "BUY YES";  
+      if (edge >= 25 && confluenceScore >= 75) action = "STRONG BUY YES";  
+      else if (edge >= 15 && confluenceScore >= 50) action = "BUY YES";  
       else if (edge >= 5) action = "LEAN YES";  
       else if (edge <= -25 && confluenceScore <= 25)  
         action = "STRONG BUY NO";  
-      else if (edge <= -15 && confluenceScore <= 50)  
-        action = "BUY NO";  
+      else if (edge <= -15 && confluenceScore <= 50) action = "BUY NO";  
       else if (edge <= -5) action = "LEAN NO";  
       else action = "NEUTRAL";  
     } else {  
-      if (confluenceScore >= 100)  
-        action = "STRONG BUY YES";  
+      if (confluenceScore >= 100) action = "STRONG BUY YES";  
       else if (confluenceScore >= 75) action = "BUY YES";  
       else if (confluenceScore >= 50) action = "LEAN YES";  
-      else if (confluenceScore <= 0)  
-        action = "STRONG BUY NO";  
+      else if (confluenceScore <= 0) action = "STRONG BUY NO";  
       else if (confluenceScore <= 25) action = "BUY NO";  
       else action = "NEUTRAL";  
     }
@@ -898,10 +1097,7 @@ function App() {
   const entrySignal = buildEntrySignal();
 
   const getActionColor = (action: string): string => {  
-    if (  
-      action.includes("STRONG BUY UP") ||  
-      action.includes("STRONG BUY YES")  
-    )  
+    if (action.includes("STRONG BUY UP") || action.includes("STRONG BUY YES"))  
       return "action-strong-buy";  
     if (  
       action.includes("BUY UP") ||  
@@ -909,10 +1105,7 @@ function App() {
       action.includes("ABOVE")  
     )  
       return "action-buy";  
-    if (  
-      action.includes("LEAN UP") ||  
-      action.includes("LEAN YES")  
-    )  
+    if (action.includes("LEAN UP") || action.includes("LEAN YES"))  
       return "action-lean-buy";  
     if (  
       action.includes("STRONG BUY DOWN") ||  
@@ -925,24 +1118,17 @@ function App() {
       action.includes("BELOW")  
     )  
       return "action-sell";  
-    if (  
-      action.includes("LEAN DOWN") ||  
-      action.includes("LEAN NO")  
-    )  
+    if (action.includes("LEAN DOWN") || action.includes("LEAN NO"))  
       return "action-lean-sell";  
     return "action-neutral";  
   };
 
   // ============================================  
-  // BANKROLL / KELLY CRITERION (v7.0)  
+  // BANKROLL / KELLY CRITERION  
   // ============================================
 
-  const wins = journal.filter(  
-    (e) => e.status === "WIN"  
-  ).length;  
-  const losses = journal.filter(  
-    (e) => e.status === "LOSS"  
-  ).length;  
+  const wins = journal.filter((e) => e.status === "WIN").length;  
+  const losses = journal.filter((e) => e.status === "LOSS").length;  
   const pendingCount = journal.filter(  
     (e) => e.status === "PENDING"  
   ).length;  
@@ -951,13 +1137,11 @@ function App() {
       ? 0  
       : Math.round((wins / (wins + losses)) * 100);
 
-  const winRate =  
-    wins + losses === 0 ? 0.5 : wins / (wins + losses);
+  const winRate = wins + losses === 0 ? 0.5 : wins / (wins + losses);
 
   const kalshiTradesWithData = journal.filter(  
     (e) =>  
-      (e.kalshiYes !== undefined ||  
-        e.kalshiNo !== undefined) &&  
+      (e.kalshiYes !== undefined || e.kalshiNo !== undefined) &&  
       e.status !== "PENDING"  
   );
 
@@ -975,27 +1159,20 @@ function App() {
     if (winTrades.length > 0) {  
       avgWin =  
         winTrades.reduce(  
-          (sum, e) =>  
-            sum +  
-            (100 - (e.kalshiYes || e.kalshiNo || 50)),  
+          (sum, e) => sum + (100 - (e.kalshiYes || e.kalshiNo || 50)),  
           0  
         ) / winTrades.length;  
     }  
     if (lossTrades.length > 0) {  
       avgLoss =  
         lossTrades.reduce(  
-          (sum, e) =>  
-            sum + (e.kalshiYes || e.kalshiNo || 50),  
+          (sum, e) => sum + (e.kalshiYes || e.kalshiNo || 50),  
           0  
         ) / lossTrades.length;  
     }  
   }
 
-  const kellyFraction = getKellyFraction(  
-    winRate,  
-    avgWin,  
-    avgLoss  
-  );  
+  const kellyFraction = getKellyFraction(winRate, avgWin, avgLoss);  
   const halfKelly = kellyFraction / 2;
 
   const recommendedBet =  
@@ -1007,37 +1184,27 @@ function App() {
       ? Math.round(bankroll * kellyFraction * 100) / 100  
       : null;
 
-  // EV calculation uses the bet cost from target mode or legacy  
   const betCost =  
     recommendation.betSide === "UP" && kalshiUp !== null  
       ? kalshiUp  
-      : recommendation.betSide === "DOWN" &&  
-        kalshiDown !== null  
+      : recommendation.betSide === "DOWN" && kalshiDown !== null  
       ? kalshiDown  
       : kalshiYes;
 
   const evPerTrade =  
     betCost !== null  
-      ? Math.round(  
-          winRate * (100 - betCost) -  
-            (1 - winRate) * betCost  
-        )  
+      ? Math.round(winRate * (100 - betCost) - (1 - winRate) * betCost)  
       : null;
 
   const evDollar =  
     recommendedBet !== null && evPerTrade !== null  
-      ? Math.round(  
-          (recommendedBet * evPerTrade) / 100  
-        )  
+      ? Math.round((recommendedBet * evPerTrade) / 100)  
       : null;
 
-  // Win streak  
   const calculateWinStreak = () => {  
     let currentStreak = 0;  
     const gradedEntries = journal.filter(  
-      (entry) =>  
-        entry.status === "WIN" ||  
-        entry.status === "LOSS"  
+      (entry) => entry.status === "WIN" || entry.status === "LOSS"  
     );  
     for (const entry of gradedEntries) {  
       if (entry.status === "WIN") currentStreak++;  
@@ -1047,10 +1214,8 @@ function App() {
   };  
   const winStreak = calculateWinStreak();
 
-  // Edge stats  
   const edgePredictions = journal.filter(  
-    (e) =>  
-      e.edge !== undefined && e.status !== "PENDING"  
+    (e) => e.edge !== undefined && e.status !== "PENDING"  
   );  
   const edgeWins = edgePredictions.filter(  
     (e) => e.status === "WIN"  
@@ -1058,9 +1223,7 @@ function App() {
   const edgeAccuracy =  
     edgePredictions.length === 0  
       ? 0  
-      : Math.round(  
-          (edgeWins / edgePredictions.length) * 100  
-        );  
+      : Math.round((edgeWins / edgePredictions.length) * 100);  
   const avgEdge =  
     edgePredictions.length === 0  
       ? 0  
@@ -1071,43 +1234,29 @@ function App() {
           ) / edgePredictions.length  
         );
 
-  // Legacy Kalshi edge  
-  const kalshiEdge =  
-    kalshiYes !== null ? fairValue - kalshiYes : null;
+  const kalshiEdge = kalshiYes !== null ? fairValue - kalshiYes : null;
 
   const getEdgeVerdict = (edgeValue: number) => {  
     const absEdge = Math.abs(edgeValue);  
-    if (absEdge >= 20)  
-      return { label: "STRONG EDGE", tier: "strong" };  
-    if (absEdge >= 10)  
-      return { label: "MODERATE EDGE", tier: "moderate" };  
-    if (absEdge >= 5)  
-      return { label: "SLIGHT EDGE", tier: "slight" };  
+    if (absEdge >= 20) return { label: "STRONG EDGE", tier: "strong" };  
+    if (absEdge >= 10) return { label: "MODERATE EDGE", tier: "moderate" };  
+    if (absEdge >= 5) return { label: "SLIGHT EDGE", tier: "slight" };  
     return { label: "NO EDGE", tier: "none" };  
   };
 
   const getEdgeDirection = (edgeValue: number) => {  
-    if (edgeValue > 0)  
-      return "CryptoRPM is MORE bullish than Kalshi";  
-    if (edgeValue < 0)  
-      return "CryptoRPM is LESS bullish than Kalshi";  
+    if (edgeValue > 0) return "CryptoRPM is MORE bullish than Kalshi";  
+    if (edgeValue < 0) return "CryptoRPM is LESS bullish than Kalshi";  
     return "CryptoRPM and Kalshi agree";  
   };
 
-  // Time remaining helper  
-  const getTimeRemaining = (  
-    predictionTimestamp: number  
-  ) => {  
+  const getTimeRemaining = (predictionTimestamp: number) => {  
     const elapsed = Date.now() - predictionTimestamp;  
     const remaining = 15 * 60 * 1000 - elapsed;  
     if (remaining <= 0) return "Grading...";  
     const mins = Math.floor(remaining / 60000);  
-    const secs = Math.floor(  
-      (remaining % 60000) / 1000  
-    );  
-    return `${mins}m ${secs  
-      .toString()  
-      .padStart(2, "0")}s`;  
+    const secs = Math.floor((remaining % 60000) / 1000);  
+    return `${mins}m ${secs.toString().padStart(2, "0")}s`;  
   };
 
   const getStatusClass = (status: string) => {  
@@ -1146,10 +1295,8 @@ function App() {
   function handleKalshiPricesSubmit() {  
     const up = parseFloat(kalshiUpInput);  
     const down = parseFloat(kalshiDownInput);  
-    if (!isNaN(up) && up >= 0 && up <= 100)  
-      setKalshiUp(up);  
-    if (!isNaN(down) && down >= 0 && down <= 100)  
-      setKalshiDown(down);  
+    if (!isNaN(up) && up >= 0 && up <= 100) setKalshiUp(up);  
+    if (!isNaN(down) && down >= 0 && down <= 100) setKalshiDown(down);  
   }
 
   function clearKalshiPrices() {  
@@ -1161,13 +1308,10 @@ function App() {
 
   function handleKalshiSubmit() {  
     const val = parseFloat(kalshiYesInput);  
-    if (!isNaN(val) && val >= 0 && val <= 100)  
-      setKalshiYes(val);  
+    if (!isNaN(val) && val >= 0 && val <= 100) setKalshiYes(val);  
   }
 
-  function handleKalshiKeyDown(  
-    e: React.KeyboardEvent  
-  ) {  
+  function handleKalshiKeyDown(e: React.KeyboardEvent) {  
     if (e.key === "Enter") handleKalshiSubmit();  
   }
 
@@ -1181,10 +1325,12 @@ function App() {
     if (!isNaN(val) && val > 0) setBankroll(val);  
   }
 
-  function handleBankrollKeyDown(  
-    e: React.KeyboardEvent  
-  ) {  
+  function handleBankrollKeyDown(e: React.KeyboardEvent) {  
     if (e.key === "Enter") handleBankrollSubmit();  
+  }
+
+  function refreshKalshi() {  
+    loadKalshiData();  
   }
 
   function savePrediction() {  
@@ -1202,9 +1348,7 @@ function App() {
             : "SKIP ⏭"  
           : prediction,  
       confidence:  
-        targetPrice !== null  
-          ? targetPrediction.confidence  
-          : confidence,  
+        targetPrice !== null ? targetPrediction.confidence : confidence,  
       initialPrice: btcPrice,  
       predictionTimestamp: Date.now(),  
       status: "PENDING",  
@@ -1214,8 +1358,7 @@ function App() {
           : kalshiYes !== null  
           ? kalshiYes  
           : undefined,  
-      kalshiNo:  
-        kalshiDown !== null ? kalshiDown : undefined,  
+      kalshiNo: kalshiDown !== null ? kalshiDown : undefined,  
       edge:  
         recommendation.edge !== null  
           ? recommendation.edge  
@@ -1223,13 +1366,9 @@ function App() {
           ? kalshiEdge  
           : undefined,  
       confluenceScore,  
-      recommendedBet:  
-        recommendedBet !== null  
-          ? recommendedBet  
-          : undefined,  
+      recommendedBet: recommendedBet !== null ? recommendedBet : undefined,  
       entryAction: recommendation.action,  
-      targetPrice:  
-        targetPrice !== null ? targetPrice : undefined,  
+      targetPrice: targetPrice !== null ? targetPrice : undefined,  
       betSide: recommendation.betSide,  
     };
 
@@ -1263,22 +1402,12 @@ function App() {
       entry.signal,  
       entry.confidence.toString(),  
       entry.initialPrice.toFixed(2),  
-      entry.finalPrice  
-        ? entry.finalPrice.toFixed(2)  
-        : "—",  
-      entry.targetPrice  
-        ? entry.targetPrice.toFixed(2)  
-        : "—",  
+      entry.finalPrice ? entry.finalPrice.toFixed(2) : "—",  
+      entry.targetPrice ? entry.targetPrice.toFixed(2) : "—",  
       entry.betSide || "—",  
-      entry.kalshiYes !== undefined  
-        ? entry.kalshiYes.toString()  
-        : "—",  
-      entry.kalshiNo !== undefined  
-        ? entry.kalshiNo.toString()  
-        : "—",  
-      entry.edge !== undefined  
-        ? entry.edge.toString()  
-        : "—",  
+      entry.kalshiYes !== undefined ? entry.kalshiYes.toString() : "—",  
+      entry.kalshiNo !== undefined ? entry.kalshiNo.toString() : "—",  
+      entry.edge !== undefined ? entry.edge.toString() : "—",  
       entry.confluenceScore !== undefined  
         ? entry.confluenceScore.toString()  
         : "—",  
@@ -1287,26 +1416,18 @@ function App() {
         ? entry.recommendedBet.toFixed(2)  
         : "—",  
       entry.status,  
-      new Date(  
-        entry.predictionTimestamp  
-      ).toISOString(),  
+      new Date(entry.predictionTimestamp).toISOString(),  
       entry.gradedTimestamp  
-        ? new Date(  
-            entry.gradedTimestamp  
-          ).toISOString()  
+        ? new Date(entry.gradedTimestamp).toISOString()  
         : "—",  
     ]);
 
     const csv = [  
       headers.map((h) => `"${h}"`).join(","),  
-      ...rows.map((row) =>  
-        row.map((cell) => `"${cell}"`).join(",")  
-      ),  
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),  
     ].join("\n");
 
-    const blob = new Blob([csv], {  
-      type: "text/csv;charset=utf-8;",  
-    });  
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });  
     const link = document.createElement("a");  
     link.href = URL.createObjectURL(blob);  
     link.download = "CryptoRPM_Journal.csv";  
@@ -1329,7 +1450,9 @@ function App() {
   const filteredJournal = journal.filter((entry) => {  
     if (journalFilter === "ALL") return true;  
     return entry.status === journalFilter;  
-  });    // ============================================  
+  });
+
+  // ============================================  
   // RENDER  
   // ============================================
 
@@ -1344,46 +1467,85 @@ function App() {
 
       <header>  
         <h1>🚗 CryptoRPM</h1>  
-        <p className="subtitle">  
-          Bitcoin 15-Minute Prediction Engine  
-        </p>  
+        <p className="subtitle">Bitcoin 15-Minute Prediction Engine</p>  
       </header>
 
-      {/* ============================================  
-          v8.0 KALSHI TARGET MODE  
-          ============================================ */}  
+      {/* KALSHI API STATUS BAR */}  
+      <div  
+        className={`kalshi-status-bar ${  
+          kalshiConnected ? "kalshi-connected" : "kalshi-disconnected"  
+        }`}  
+      >  
+        <div className="kalshi-status-left">  
+          {kalshiConnected ? <Wifi size={16} /> : <WifiOff size={16} />}  
+          <span className="kalshi-status-text">  
+            {kalshiConnected  
+              ? `KALSHI LIVE — ${kalshiMarketTicker}`  
+              : "KALSHI DISCONNECTED"}  
+          </span>  
+          {kalshiConnected && kalshiCloseTime && (  
+            <span className="kalshi-close-time">  
+              Closes: {kalshiCloseTime}  
+            </span>  
+          )}  
+        </div>  
+        <div className="kalshi-status-right">  
+          {kalshiLastUpdate && (  
+            <span className="kalshi-last-update">  
+              Updated: {kalshiLastUpdate}  
+            </span>  
+          )}  
+          <button  
+            className="kalshi-refresh-btn"  
+            onClick={refreshKalshi}  
+            title="Refresh Kalshi data"  
+          >  
+            <RefreshCw size={14} />  
+          </button>  
+        </div>  
+      </div>
+
+      {kalshiError && !kalshiConnected && (  
+        <div className="kalshi-error-banner">  
+          <AlertTriangle size={16} />  
+          <span>{kalshiError}</span>  
+          <span className="kalshi-error-hint">  
+            You can still enter prices manually below.  
+          </span>  
+        </div>  
+      )}
+
+      {/* KALSHI TARGET MODE */}  
       <div className="target-panel">  
         <div className="target-header">  
           <Crosshair size={22} />  
           <h2>Kalshi Target Mode</h2>  
           <span className="target-badge">  
-            BTC 15 MIN  
+            {kalshiConnected ? "AUTO" : "MANUAL"} • BTC 15 MIN  
           </span>  
         </div>
 
         <div className="target-body">  
-          {/* Target Input Section */}  
           <div className="target-input-section">  
             <div className="target-input-group">  
               <label>  
                 TO BEAT (Kalshi Target Price)  
+                {kalshiConnected && (  
+                  <span className="auto-label">  
+                    {" "}  
+                    — Auto-filled from Kalshi  
+                  </span>  
+                )}  
               </label>  
               <div className="target-input-row">  
                 <div className="target-input-wrapper">  
-                  <DollarSign  
-                    size={18}  
-                    className="input-icon"  
-                  />  
+                  <DollarSign size={18} className="input-icon" />  
                   <input  
                     type="number"  
                     step="0.01"  
                     placeholder="e.g. 66718.03"  
                     value={targetPriceInput}  
-                    onChange={(e) =>  
-                      setTargetPriceInput(  
-                        e.target.value  
-                      )  
-                    }  
+                    onChange={(e) => setTargetPriceInput(e.target.value)}  
                     onKeyDown={handleTargetKeyDown}  
                     className="target-input"  
                   />  
@@ -1393,18 +1555,13 @@ function App() {
                   onClick={handleTargetSubmit}  
                   disabled={  
                     targetPriceInput === "" ||  
-                    isNaN(  
-                      parseFloat(targetPriceInput)  
-                    )  
+                    isNaN(parseFloat(targetPriceInput))  
                   }  
                 >  
                   Set Target  
                 </button>  
                 {targetPrice !== null && (  
-                  <button  
-                    className="target-clear-btn"  
-                    onClick={clearTarget}  
-                  >  
+                  <button className="target-clear-btn" onClick={clearTarget}>  
                     Clear  
                   </button>  
                 )}  
@@ -1412,13 +1569,15 @@ function App() {
             </div>
 
             <div className="kalshi-prices-group">  
-              <label>Kalshi Prices (¢)</label>  
+              <label>  
+                Kalshi Prices (¢)  
+                {kalshiConnected && (  
+                  <span className="auto-label"> — Live from API</span>  
+                )}  
+              </label>  
               <div className="kalshi-prices-row">  
                 <div className="kalshi-price-input-wrap">  
-                  <ArrowUp  
-                    size={14}  
-                    className="input-icon-sm green"  
-                  />  
+                  <ArrowUp size={14} className="input-icon-sm green" />  
                   <input  
                     type="number"  
                     min="0"  
@@ -1426,19 +1585,12 @@ function App() {
                     step="1"  
                     placeholder="Up ¢"  
                     value={kalshiUpInput}  
-                    onChange={(e) =>  
-                      setKalshiUpInput(  
-                        e.target.value  
-                      )  
-                    }  
+                    onChange={(e) => setKalshiUpInput(e.target.value)}  
                     className="kalshi-price-input up-input"  
                   />  
                 </div>  
                 <div className="kalshi-price-input-wrap">  
-                  <ArrowDown  
-                    size={14}  
-                    className="input-icon-sm red"  
-                  />  
+                  <ArrowDown size={14} className="input-icon-sm red" />  
                   <input  
                     type="number"  
                     min="0"  
@@ -1446,24 +1598,17 @@ function App() {
                     step="1"  
                     placeholder="Down ¢"  
                     value={kalshiDownInput}  
-                    onChange={(e) =>  
-                      setKalshiDownInput(  
-                        e.target.value  
-                      )  
-                    }  
+                    onChange={(e) => setKalshiDownInput(e.target.value)}  
                     className="kalshi-price-input down-input"  
                   />  
                 </div>  
                 <button  
                   className="kalshi-prices-set-btn"  
-                  onClick={  
-                    handleKalshiPricesSubmit  
-                  }  
+                  onClick={handleKalshiPricesSubmit}  
                 >  
                   Set  
                 </button>  
-                {(kalshiUp !== null ||  
-                  kalshiDown !== null) && (  
+                {(kalshiUp !== null || kalshiDown !== null) && (  
                   <button  
                     className="kalshi-prices-clear-btn"  
                     onClick={clearKalshiPrices}  
@@ -1480,76 +1625,49 @@ function App() {
             <div className="target-display">  
               <div className="target-display-grid">  
                 <div className="target-info-card">  
-                  <span className="target-info-label">  
-                    TO BEAT  
-                  </span>  
+                  <span className="target-info-label">TO BEAT</span>  
                   <h2 className="target-info-value">  
                     $  
-                    {targetPrice.toLocaleString(  
-                      undefined,  
-                      {  
-                        minimumFractionDigits: 2,  
-                        maximumFractionDigits: 2,  
-                      }  
-                    )}  
+                    {targetPrice.toLocaleString(undefined, {  
+                      minimumFractionDigits: 2,  
+                      maximumFractionDigits: 2,  
+                    })}  
                   </h2>  
-                  <span className="target-info-sub">  
-                    Target Price  
-                  </span>  
+                  <span className="target-info-sub">Target Price</span>  
                 </div>
 
                 <div className="target-info-card">  
-                  <span className="target-info-label">  
-                    NOW  
-                  </span>  
+                  <span className="target-info-label">NOW</span>  
                   <h2  
                     className={`target-info-value price-flash-${priceDirection}`}  
                   >  
                     $  
-                    {btcPrice.toLocaleString(  
-                      undefined,  
-                      {  
-                        minimumFractionDigits: 2,  
-                        maximumFractionDigits: 2,  
-                      }  
-                    )}  
+                    {btcPrice.toLocaleString(undefined, {  
+                      minimumFractionDigits: 2,  
+                      maximumFractionDigits: 2,  
+                    })}  
                   </h2>  
                   <span  
                     className={`target-info-sub ${  
-                      isAboveTarget  
-                        ? "text-green"  
-                        : "text-red"  
+                      isAboveTarget ? "text-green" : "text-red"  
                     }`}  
                   >  
-                    {distanceDollar !== null &&  
-                    distancePercent !== null  
+                    {distanceDollar !== null && distancePercent !== null  
                       ? `${  
-                          distanceDollar >= 0  
-                            ? "+"  
-                            : ""  
-                        }$${distanceDollar.toFixed(  
-                          2  
-                        )} (${  
-                          distancePercent >= 0  
-                            ? "+"  
-                            : ""  
-                        }${distancePercent.toFixed(  
-                          3  
-                        )}%)`  
+                          distanceDollar >= 0 ? "+" : ""  
+                        }$${distanceDollar.toFixed(2)} (${  
+                          distancePercent >= 0 ? "+" : ""  
+                        }${distancePercent.toFixed(3)}%)`  
                       : "—"}  
                   </span>  
                 </div>
 
                 <div className="target-info-card">  
-                  <span className="target-info-label">  
-                    COUNTDOWN  
-                  </span>  
+                  <span className="target-info-label">COUNTDOWN</span>  
                   <h2 className="target-info-value countdown-value">  
                     {timeLeft}  
                   </h2>  
-                  <span className="target-info-sub">  
-                    Until Expiry  
-                  </span>  
+                  <span className="target-info-sub">Until Expiry</span>  
                 </div>  
               </div>
 
@@ -1557,94 +1675,66 @@ function App() {
               <div className="distance-bar-section">  
                 <div className="distance-bar-label">  
                   <span  
-                    className={  
-                      isAboveTarget  
-                        ? "text-green"  
-                        : "text-red"  
-                    }  
+                    className={isAboveTarget ? "text-green" : "text-red"}  
                   >  
-                    {isAboveTarget  
-                      ? "ABOVE TARGET ⬆"  
-                      : "BELOW TARGET ⬇"}  
+                    {isAboveTarget ? "ABOVE TARGET ⬆" : "BELOW TARGET ⬇"}  
                   </span>  
                   <span  
                     className={`momentum-badge momentum-${momentum.direction}`}  
                   >  
                     <Navigation size={12} />  
-                    {momentum.label} •{" "}  
-                    {momentum.speed}  
+                    {momentum.label} • {momentum.speed}  
                   </span>  
                 </div>  
                 <div className="distance-bar-track">  
                   <div className="distance-bar-center" />  
                   <div  
                     className={`distance-bar-fill ${  
-                      isAboveTarget  
-                        ? "fill-above"  
-                        : "fill-below"  
+                      isAboveTarget ? "fill-above" : "fill-below"  
                     }`}  
                     style={{  
                       width: `${Math.min(  
                         50,  
-                        Math.abs(  
-                          distancePercent || 0  
-                        ) * 100  
+                        Math.abs(distancePercent || 0) * 100  
                       )}%`,  
-                      [isAboveTarget  
-                        ? "left"  
-                        : "right"]: "50%",  
+                      [isAboveTarget ? "left" : "right"]: "50%",  
                     }}  
                   />  
                   <div className="distance-bar-marker" />  
                 </div>  
                 <div className="distance-bar-ends">  
                   <span>Below</span>  
-                  <span className="distance-target-label">  
-                    ${targetPrice.toLocaleString()}  
-                  </span>  
+                  <span>${targetPrice.toLocaleString()}</span>  
                   <span>Above</span>  
                 </div>  
               </div>
 
               {/* Kalshi Up/Down Display */}  
-              {(kalshiUp !== null ||  
-                kalshiDown !== null) && (  
+              {(kalshiUp !== null || kalshiDown !== null) && (  
                 <div className="kalshi-odds-display">  
                   <div  
                     className={`kalshi-odds-card ${  
-                      recommendation.betSide ===  
-                      "UP"  
+                      recommendation.betSide === "UP"  
                         ? "odds-highlighted"  
                         : ""  
                     }`}  
                   >  
-                    <span className="odds-label">  
-                      Up  
-                    </span>  
+                    <span className="odds-label">Up</span>  
                     <h3 className="odds-value odds-up">  
-                      {kalshiUp !== null  
-                        ? `${kalshiUp}¢`  
-                        : "—"}  
+                      {kalshiUp !== null ? `${kalshiUp}¢` : "—"}  
                     </h3>  
                   </div>  
-                  <div className="odds-divider">  
-                    vs  
-                  </div>  
+                  <div className="odds-divider">vs</div>  
                   <div  
                     className={`kalshi-odds-card ${  
-                      recommendation.betSide ===  
-                      "DOWN"  
+                      recommendation.betSide === "DOWN"  
                         ? "odds-highlighted"  
                         : ""  
                     }`}  
                   >  
-                    <span className="odds-label">  
-                      Down  
-                    </span>  
+                    <span className="odds-label">Down</span>  
                     <h3 className="odds-value odds-down">  
-                      {kalshiDown !== null  
-                        ? `${kalshiDown}¢`  
-                        : "—"}  
+                      {kalshiDown !== null ? `${kalshiDown}¢` : "—"}  
                     </h3>  
                   </div>  
                 </div>  
@@ -1655,19 +1745,15 @@ function App() {
                 className={`recommendation-card ${recommendation.color}`}  
               >  
                 <div className="rec-main">  
-                  {recommendation.betSide ===  
-                  "UP" ? (  
+                  {recommendation.betSide === "UP" ? (  
                     <ArrowUp size={28} />  
-                  ) : recommendation.betSide ===  
-                    "DOWN" ? (  
+                  ) : recommendation.betSide === "DOWN" ? (  
                     <ArrowDown size={28} />  
                   ) : (  
                     <SkipForward size={28} />  
                   )}  
                   <div className="rec-content">  
-                    <h3 className="rec-action">  
-                      {recommendation.action}  
-                    </h3>  
+                    <h3 className="rec-action">{recommendation.action}</h3>  
                     <p className="rec-explanation">  
                       {recommendation.explanation}  
                     </p>  
@@ -1685,40 +1771,23 @@ function App() {
                             : "edge-negative"  
                         }  
                       >  
-                        {recommendation.edge > 0  
-                          ? "+"  
-                          : ""}  
-                        {Math.round(  
-                          recommendation.edge  
-                        )}  
-                        %  
+                        {recommendation.edge > 0 ? "+" : ""}  
+                        {Math.round(recommendation.edge)}%  
                       </strong>  
                     </div>  
                     <div className="rec-stat">  
                       <span>Confidence</span>  
-                      <strong>  
-                        {  
-                          targetPrediction.confidence  
-                        }  
-                        %  
-                      </strong>  
+                      <strong>{targetPrediction.confidence}%</strong>  
                     </div>  
                     {recommendedBet !== null &&  
-                      recommendation.betSide !==  
-                        "SKIP" && (  
+                      recommendation.betSide !== "SKIP" && (  
                         <div className="rec-stat">  
                           <span>Bet Size</span>  
-                          <strong>  
-                            $  
-                            {recommendedBet.toFixed(  
-                              2  
-                            )}  
-                          </strong>  
+                          <strong>${recommendedBet.toFixed(2)}</strong>  
                         </div>  
                       )}  
                     {evPerTrade !== null &&  
-                      recommendation.betSide !==  
-                        "SKIP" && (  
+                      recommendation.betSide !== "SKIP" && (  
                         <div className="rec-stat">  
                           <span>EV/Trade</span>  
                           <strong  
@@ -1728,9 +1797,7 @@ function App() {
                                 : "edge-negative"  
                             }  
                           >  
-                            {evPerTrade >= 0  
-                              ? "+"  
-                              : ""}  
+                            {evPerTrade >= 0 ? "+" : ""}  
                             {evPerTrade}¢  
                           </strong>  
                         </div>  
@@ -1744,14 +1811,13 @@ function App() {
                 <button  
                   className="save-prediction-btn"  
                   onClick={savePrediction}  
-                  disabled={  
-                    recommendation.betSide ===  
-                    "SKIP"  
-                  }  
+                  disabled={recommendation.betSide === "SKIP"}  
                 >  
                   {recommendation.betSide === "SKIP"  
                     ? "No Trade to Save"  
-                    : `Save: ${recommendation.betSide} @ $${btcPrice.toLocaleString()}`}  
+                    : `Save: ${  
+                        recommendation.betSide  
+                      } @ $${btcPrice.toLocaleString()}`}  
                 </button>  
               </div>  
             </div>  
@@ -1761,34 +1827,46 @@ function App() {
             <div className="target-placeholder">  
               <Crosshair size={40} />  
               <h3>  
-                Enter the Kalshi "TO BEAT" price  
+                {kalshiConnected  
+                  ? "Loading target from Kalshi..."  
+                  : 'Enter the Kalshi "TO BEAT" price'}  
               </h3>  
               <p>  
-                Copy the target price from your  
-                Kalshi BTC 15-min contract above to  
-                get started  
+                {kalshiConnected  
+                  ? "Target price will auto-fill from the next active contract"  
+                  : "Copy the target price from your Kalshi BTC 15-min contract above to get started"}  
               </p>  
             </div>  
           )}  
         </div>  
       </div>
 
-      {/* ============================================  
-          CHART (with target reference line)  
-          ============================================ */}  
+      {/* LIVE CHART */}  
       <div className="chart-card">  
+        <div className="live-chart-header">  
+          <span className="live-dot" />  
+          <span className="live-chart-title">LIVE</span>  
+          <span className="live-chart-points">  
+            {liveChartData.length} points  
+          </span>  
+        </div>  
         <ResponsiveContainer  
           width="100%"  
-          height={450}  
+          height={window.innerWidth < 768 ? 250 : 450}  
         >  
-          <LineChart data={chartData}>  
-            <XAxis dataKey="time" stroke="#555" />  
-            <YAxis  
-              domain={[  
-                "dataMin - 50",  
-                "dataMax + 50",  
-              ]}  
+          <LineChart  
+            data={liveChartData.length > 2 ? liveChartData : chartData}  
+          >  
+            <XAxis  
+              dataKey="time"  
               stroke="#555"  
+              tick={{ fontSize: 10 }}  
+              interval="preserveStartEnd"  
+            />  
+            <YAxis  
+              domain={["dataMin - 20", "dataMax + 20"]}  
+              stroke="#555"  
+              tick={{ fontSize: 11 }}  
             />  
             <Tooltip  
               contentStyle={{  
@@ -1817,10 +1895,11 @@ function App() {
               type="monotone"  
               dataKey="price"  
               stroke="#f7931a"  
-              strokeWidth={4}  
+              strokeWidth={3}  
               dot={false}  
+              isAnimationActive={false}  
               activeDot={{  
-                r: 6,  
+                r: 5,  
                 fill: "#f7931a",  
                 stroke: "#fff",  
                 strokeWidth: 2,  
@@ -1830,15 +1909,10 @@ function App() {
         </ResponsiveContainer>  
       </div>
 
-      {/* ============================================  
-          MARKET PANEL  
-          ============================================ */}  
+      {/* MARKET PANEL */}  
       <div className="market-panel">  
         <div className="main-market">  
-          <p className="question">  
-            TREND DIRECTION  
-          </p>
-
+          <p className="question">TREND DIRECTION</p>  
           <div  
             className={`prediction-main ${  
               prediction.includes("UP")  
@@ -1847,19 +1921,14 @@ function App() {
             }`}  
           >  
             {prediction}  
-          </div>
-
-          <div  
-            className={`btc-price price-flash-${priceDirection}`}  
-          >  
+          </div>  
+          <div className={`btc-price price-flash-${priceDirection}`}>  
             ${btcPrice.toLocaleString()}  
-          </div>
-
+          </div>  
           <div className="countdown">  
             <Clock3 size={18} />  
             {timeLeft}  
-          </div>
-
+          </div>  
           <div className="button-row">  
             <button  
               className="save-btn"  
@@ -1882,20 +1951,17 @@ function App() {
             >  
               Clear Journal  
             </button>  
-          </div>
-
+          </div>  
           {pendingCount > 0 && (  
             <div className="auto-grade-banner">  
               <Hourglass size={16} />  
               <span>  
                 {pendingCount} prediction  
-                {pendingCount > 1 ? "s" : ""}{" "}  
-                awaiting auto-grade  
+                {pendingCount > 1 ? "s" : ""} awaiting auto-grade  
               </span>  
             </div>  
           )}  
-        </div>
-
+        </div>  
         <div className="side-market">  
           <div className="yes-box">  
             YES  
@@ -1908,32 +1974,22 @@ function App() {
         </div>  
       </div>
 
-      {/* ============================================  
-          MULTI-TIMEFRAME CONFLUENCE (v5.0)  
-          ============================================ */}  
+      {/* MULTI-TIMEFRAME CONFLUENCE */}  
       <div className="confluence-panel">  
         <div className="confluence-header">  
           <Layers size={22} />  
           <h2>Multi-Timeframe Confluence</h2>  
           <div className="confluence-star-rating">  
-            {Array.from({ length: 5 }).map(  
-              (_, i) => (  
-                <Star  
-                  key={i}  
-                  size={18}  
-                  className={  
-                    i < starRating  
-                      ? "star-filled"  
-                      : "star-empty"  
-                  }  
-                  fill={  
-                    i < starRating  
-                      ? "#ffd700"  
-                      : "none"  
-                  }  
-                />  
-              )  
-            )}  
+            {Array.from({ length: 5 }).map((_, i) => (  
+              <Star  
+                key={i}  
+                size={18}  
+                className={  
+                  i < starRating ? "star-filled" : "star-empty"  
+                }  
+                fill={i < starRating ? "#ffd700" : "none"}  
+              />  
+            ))}  
           </div>  
         </div>
 
@@ -1943,9 +1999,7 @@ function App() {
               key={signal.period}  
               className={`timeframe-card tf-${signal.direction.toLowerCase()}`}  
             >  
-              <div className="tf-label">  
-                {signal.label}  
-              </div>  
+              <div className="tf-label">{signal.label}</div>  
               <div  
                 className={`tf-direction tf-dir-${signal.direction.toLowerCase()}`}  
               >  
@@ -1955,13 +2009,9 @@ function App() {
                   <ChevronDown size={20} />  
                 )}  
                 {signal.direction}{" "}  
-                {signal.direction === "UP"  
-                  ? "⬆"  
-                  : "⬇"}  
+                {signal.direction === "UP" ? "⬆" : "⬇"}  
               </div>  
-              <div className="tf-confidence">  
-                {signal.confidence}%  
-              </div>  
+              <div className="tf-confidence">{signal.confidence}%</div>  
               <div  
                 className={`tf-change ${  
                   signal.change >= 0  
@@ -1997,18 +2047,14 @@ function App() {
               />  
               <div  
                 className="confluence-meter-marker"  
-                style={{  
-                  left: `${confluenceScore}%`,  
-                }}  
+                style={{ left: `${confluenceScore}%` }}  
               />  
             </div>  
           </div>
 
           <div className="confluence-stats">  
             <div className="confluence-stat">  
-              <span className="cs-label">  
-                Confluence  
-              </span>  
+              <span className="cs-label">Confluence</span>  
               <span  
                 className={`cs-value cs-${  
                   confluenceScore >= 75  
@@ -2022,34 +2068,24 @@ function App() {
               </span>  
             </div>  
             <div className="confluence-stat">  
-              <span className="cs-label">  
-                Verdict  
-              </span>  
-              <span className="cs-value">  
-                {confluenceLabel}  
-              </span>  
+              <span className="cs-label">Verdict</span>  
+              <span className="cs-value">{confluenceLabel}</span>  
             </div>  
             <div className="confluence-stat">  
-              <span className="cs-label">  
-                Bullish  
-              </span>  
-              <span className="cs-value cs-bull">  
+              <span className="cs-label">Bullish</span>  
+              <span className="cs-value">  
                 {bullishCount}/{allSignals.length}  
               </span>  
             </div>  
             <div className="confluence-stat">  
-              <span className="cs-label">  
-                Fair Value  
-              </span>  
-              <span className="cs-value">  
-                {fairValue}%  
-              </span>  
+              <span className="cs-label">Fair Value</span>  
+              <span className="cs-value">{fairValue}%</span>  
             </div>  
           </div>  
         </div>  
-      </div>        {/* ============================================  
-          SMART ENTRY SIGNAL (v6.0)  
-          ============================================ */}  
+      </div>
+
+      {/* SMART ENTRY SIGNAL */}  
       <div className="entry-signal-panel">  
         <div className="entry-header">  
           <Target size={22} />  
@@ -2062,19 +2098,11 @@ function App() {
               entrySignal.action  
             )}`}  
           >  
-            {entrySignal.action.includes(  
-              "BUY YES"  
-            ) ||  
-            entrySignal.action.includes(  
-              "LEAN YES"  
-            ) ? (  
+            {entrySignal.action.includes("BUY YES") ||  
+            entrySignal.action.includes("LEAN YES") ? (  
               <ChevronUp size={28} />  
-            ) : entrySignal.action.includes(  
-                "BUY NO"  
-              ) ||  
-              entrySignal.action.includes(  
-                "LEAN NO"  
-              ) ? (  
+            ) : entrySignal.action.includes("BUY NO") ||  
+              entrySignal.action.includes("LEAN NO") ? (  
               <ChevronDown size={28} />  
             ) : (  
               <Minus size={28} />  
@@ -2097,9 +2125,7 @@ function App() {
                 step="1"  
                 placeholder="e.g. 32"  
                 value={kalshiYesInput}  
-                onChange={(e) =>  
-                  setKalshiYesInput(e.target.value)  
-                }  
+                onChange={(e) => setKalshiYesInput(e.target.value)}  
                 onKeyDown={handleKalshiKeyDown}  
                 className="kalshi-input"  
               />  
@@ -2108,9 +2134,7 @@ function App() {
                 onClick={handleKalshiSubmit}  
                 disabled={  
                   kalshiYesInput === "" ||  
-                  isNaN(  
-                    parseFloat(kalshiYesInput)  
-                  ) ||  
+                  isNaN(parseFloat(kalshiYesInput)) ||  
                   parseFloat(kalshiYesInput) < 0 ||  
                   parseFloat(kalshiYesInput) > 100  
                 }  
@@ -2131,11 +2155,8 @@ function App() {
           <div className="entry-details-grid">  
             <div className="entry-detail">  
               <p className="ed-label">Fair Value</p>  
-              <h3 className="ed-value">  
-                {fairValue}%  
-              </h3>  
-            </div>
-
+              <h3 className="ed-value">{fairValue}%</h3>  
+            </div>  
             <div className="entry-detail">  
               <p className="ed-label">Kalshi YES</p>  
               <h3  
@@ -2143,12 +2164,9 @@ function App() {
                   kalshiYes !== null ? "" : "dim"  
                 }`}  
               >  
-                {kalshiYes !== null  
-                  ? `${kalshiYes}¢`  
-                  : "—"}  
+                {kalshiYes !== null ? `${kalshiYes}¢` : "—"}  
               </h3>  
-            </div>
-
+            </div>  
             <div className="entry-detail">  
               <p className="ed-label">Edge</p>  
               <h3  
@@ -2163,68 +2181,46 @@ function App() {
                 }`}  
               >  
                 {kalshiEdge !== null  
-                  ? `${  
-                      kalshiEdge > 0 ? "+" : ""  
-                    }${Math.round(kalshiEdge)}%`  
+                  ? `${kalshiEdge > 0 ? "+" : ""}${Math.round(  
+                      kalshiEdge  
+                    )}%`  
                   : "—"}  
               </h3>  
-            </div>
-
+            </div>  
             <div className="entry-detail">  
               <p className="ed-label">Confluence</p>  
-              <h3 className="ed-value">  
-                {confluenceScore}%  
-              </h3>  
+              <h3 className="ed-value">{confluenceScore}%</h3>  
             </div>
 
             {kalshiYes !== null && (  
               <>  
                 <div className="entry-detail entry-profit">  
-                  <p className="ed-label">  
-                    Potential Profit  
-                  </p>  
+                  <p className="ed-label">Potential Profit</p>  
                   <h3 className="ed-value edge-positive">  
-                    +  
-                    {entrySignal.potentialProfit}¢  
+                    +{entrySignal.potentialProfit}¢  
                   </h3>  
-                </div>
-
+                </div>  
                 <div className="entry-detail entry-loss">  
-                  <p className="ed-label">  
-                    Potential Loss  
-                  </p>  
+                  <p className="ed-label">Potential Loss</p>  
                   <h3 className="ed-value edge-negative">  
                     -{entrySignal.potentialLoss}¢  
                   </h3>  
-                </div>
-
+                </div>  
                 <div className="entry-detail">  
-                  <p className="ed-label">  
-                    Risk / Reward  
-                  </p>  
+                  <p className="ed-label">Risk / Reward</p>  
                   <h3 className="ed-value">  
-                    1 :{" "}  
-                    {entrySignal.riskReward?.toFixed(  
-                      2  
-                    )}  
+                    1 : {entrySignal.riskReward?.toFixed(2)}  
                   </h3>  
-                </div>
-
+                </div>  
                 {kalshiEdge !== null && (  
                   <div className="entry-detail">  
-                    <p className="ed-label">  
-                      Edge Verdict  
-                    </p>  
+                    <p className="ed-label">Edge Verdict</p>  
                     <span  
                       className={`edge-verdict-badge verdict-${  
-                        getEdgeVerdict(kalshiEdge)  
-                          .tier  
+                        getEdgeVerdict(kalshiEdge).tier  
                       }`}  
                     >  
-                      {  
-                        getEdgeVerdict(kalshiEdge)  
-                          .label  
-                      }  
+                      {getEdgeVerdict(kalshiEdge).label}  
                     </span>  
                   </div>  
                 )}  
@@ -2236,22 +2232,16 @@ function App() {
             <div className="entry-edge-bar">  
               <div className="edge-bar-labels">  
                 <span>Kalshi {kalshiYes}%</span>  
-                <span>  
-                  Fair Value {fairValue}%  
-                </span>  
+                <span>Fair Value {fairValue}%</span>  
               </div>  
               <div className="edge-bar-track">  
                 <div  
                   className="edge-bar-kalshi"  
-                  style={{  
-                    width: `${kalshiYes}%`,  
-                  }}  
+                  style={{ width: `${kalshiYes}%` }}  
                 />  
                 <div  
                   className="edge-bar-rpm"  
-                  style={{  
-                    width: `${fairValue}%`,  
-                  }}  
+                  style={{ width: `${fairValue}%` }}  
                 />  
               </div>  
               <p className="edge-direction-text">  
@@ -2262,16 +2252,12 @@ function App() {
         </div>  
       </div>
 
-      {/* ============================================  
-          BANKROLL MANAGER (v7.0)  
-          ============================================ */}  
+      {/* BANKROLL MANAGER */}  
       <div className="bankroll-panel">  
         <div className="bankroll-header">  
           <Wallet size={22} />  
           <h2>Bankroll Manager</h2>  
-          <span className="bankroll-badge">  
-            Kelly Criterion  
-          </span>  
+          <span className="bankroll-badge">Kelly Criterion</span>  
         </div>
 
         <div className="bankroll-body">  
@@ -2281,10 +2267,7 @@ function App() {
             </label>  
             <div className="bankroll-input-row">  
               <div className="bankroll-input-wrapper">  
-                <DollarSign  
-                  size={18}  
-                  className="bankroll-input-icon"  
-                />  
+                <DollarSign size={18} className="bankroll-input-icon" />  
                 <input  
                   id="bankroll-input"  
                   type="number"  
@@ -2292,9 +2275,7 @@ function App() {
                   step="1"  
                   placeholder="e.g. 500"  
                   value={bankrollInput}  
-                  onChange={(e) =>  
-                    setBankrollInput(e.target.value)  
-                  }  
+                  onChange={(e) => setBankrollInput(e.target.value)}  
                   onKeyDown={handleBankrollKeyDown}  
                   className="bankroll-input"  
                 />  
@@ -2304,9 +2285,7 @@ function App() {
                 onClick={handleBankrollSubmit}  
                 disabled={  
                   bankrollInput === "" ||  
-                  isNaN(  
-                    parseFloat(bankrollInput)  
-                  ) ||  
+                  isNaN(parseFloat(bankrollInput)) ||  
                   parseFloat(bankrollInput) <= 0  
                 }  
               >  
@@ -2321,33 +2300,22 @@ function App() {
                 <div className="bankroll-stat-card">  
                   <PiggyBank size={20} />  
                   <p>Bankroll</p>  
-                  <h3>  
-                    ${bankroll.toLocaleString()}  
-                  </h3>  
+                  <h3>${bankroll.toLocaleString()}</h3>  
                 </div>  
                 <div className="bankroll-stat-card">  
                   <Activity size={20} />  
                   <p>Win Rate</p>  
-                  <h3>  
-                    {Math.round(winRate * 100)}%  
-                  </h3>  
+                  <h3>{Math.round(winRate * 100)}%</h3>  
                 </div>  
                 <div className="bankroll-stat-card">  
                   <TrendingUp size={20} />  
                   <p>Kelly %</p>  
-                  <h3>  
-                    {(  
-                      kellyFraction * 100  
-                    ).toFixed(1)}  
-                    %  
-                  </h3>  
+                  <h3>{(kellyFraction * 100).toFixed(1)}%</h3>  
                 </div>  
                 <div className="bankroll-stat-card">  
                   <TrendingDown size={20} />  
                   <p>Half Kelly %</p>  
-                  <h3>  
-                    {(halfKelly * 100).toFixed(1)}%  
-                  </h3>  
+                  <h3>{(halfKelly * 100).toFixed(1)}%</h3>  
                 </div>  
               </div>
 
@@ -2368,9 +2336,9 @@ function App() {
                     </h2>  
                     <p className="bet-rec-pct">  
                       {bankroll  
-                        ? `${(  
-                            halfKelly * 100  
-                          ).toFixed(1)}% of bankroll`  
+                        ? `${(halfKelly * 100).toFixed(  
+                            1  
+                          )}% of bankroll`  
                         : ""}  
                     </p>  
                   </div>  
@@ -2378,17 +2346,11 @@ function App() {
 
                 <div className="bet-rec-details">  
                   <div className="bet-detail">  
-                    <span>  
-                      Max Bet (Full Kelly)  
-                    </span>  
+                    <span>Max Bet (Full Kelly)</span>  
                     <strong>  
-                      $  
-                      {maxBet !== null  
-                        ? maxBet.toFixed(2)  
-                        : "—"}  
+                      ${maxBet !== null ? maxBet.toFixed(2) : "—"}  
                     </strong>  
-                  </div>
-
+                  </div>  
                   {evPerTrade !== null && (  
                     <div className="bet-detail">  
                       <span>EV per Contract</span>  
@@ -2399,14 +2361,11 @@ function App() {
                             : "edge-negative"  
                         }  
                       >  
-                        {evPerTrade >= 0  
-                          ? "+"  
-                          : ""}  
+                        {evPerTrade >= 0 ? "+" : ""}  
                         {evPerTrade}¢  
                       </strong>  
                     </div>  
-                  )}
-
+                  )}  
                   {evDollar !== null && (  
                     <div className="bet-detail">  
                       <span>EV per Trade ($)</span>  
@@ -2417,28 +2376,18 @@ function App() {
                             : "edge-negative"  
                         }  
                       >  
-                        {evDollar >= 0  
-                          ? "+$"  
-                          : "-$"}  
-                        {Math.abs(evDollar).toFixed(  
-                          2  
-                        )}  
+                        {evDollar >= 0 ? "+$" : "-$"}  
+                        {Math.abs(evDollar).toFixed(2)}  
                       </strong>  
                     </div>  
-                  )}
-
+                  )}  
                   <div className="bet-detail">  
                     <span>Avg Win</span>  
-                    <strong>  
-                      +{Math.round(avgWin)}¢  
-                    </strong>  
-                  </div>
-
+                    <strong>+{Math.round(avgWin)}¢</strong>  
+                  </div>  
                   <div className="bet-detail">  
                     <span>Avg Loss</span>  
-                    <strong>  
-                      -{Math.round(avgLoss)}¢  
-                    </strong>  
+                    <strong>-{Math.round(avgLoss)}¢</strong>  
                   </div>  
                 </div>
 
@@ -2446,10 +2395,9 @@ function App() {
                   <div className="bet-warning">  
                     <AlertTriangle size={16} />  
                     <span>  
-                      Kelly suggests no bet — your  
-                      edge may not be positive.  
-                      Build more history or find a  
-                      better entry.  
+                      Kelly suggests no bet — your edge may not be  
+                      positive. Build more history or find a better  
+                      entry.  
                     </span>  
                   </div>  
                 )}
@@ -2458,11 +2406,9 @@ function App() {
                   <div className="bet-info">  
                     <Brain size={16} />  
                     <span>  
-                      Only {wins + losses} graded  
-                      trades. Kelly becomes more  
-                      accurate with 20+ trades.  
-                      Using conservative defaults  
-                      until then.  
+                      Only {wins + losses} graded trades. Kelly becomes  
+                      more accurate with 20+ trades. Using conservative  
+                      defaults until then.  
                     </span>  
                   </div>  
                 )}  
@@ -2473,18 +2419,15 @@ function App() {
           {bankroll === null && (  
             <div className="bankroll-placeholder">  
               <p>  
-                Enter your bankroll above to get  
-                Kelly Criterion bet sizing  
-                recommendations.  
+                Enter your bankroll above to get Kelly Criterion bet  
+                sizing recommendations.  
               </p>  
             </div>  
           )}  
         </div>  
       </div>
 
-      {/* ============================================  
-          STATS GRID  
-          ============================================ */}  
+      {/* STATS GRID */}  
       <div className="stats-grid">  
         <div className="stat-card">  
           <Gauge size={24} />  
@@ -2528,23 +2471,17 @@ function App() {
         </div>  
       </div>
 
-      {/* ============================================  
-          PERFORMANCE DASHBOARD  
-          ============================================ */}  
+      {/* PERFORMANCE DASHBOARD */}  
       <div className="overview-card">  
         <h2>Performance Dashboard</h2>  
         <div className="overview-grid">  
           <div>  
             <p>Wins</p>  
-            <h3 className="overview-wins">  
-              {wins}  
-            </h3>  
+            <h3 className="overview-wins">{wins}</h3>  
           </div>  
           <div>  
             <p>Losses</p>  
-            <h3 className="overview-losses">  
-              {losses}  
-            </h3>  
+            <h3 className="overview-losses">{losses}</h3>  
           </div>  
           <div>  
             <p>Accuracy</p>  
@@ -2558,96 +2495,66 @@ function App() {
             <p>  
               <Trophy size={18} /> Win Streak  
             </p>  
-            <h3 className="overview-streak">  
-              {winStreak}  
-            </h3>  
+            <h3 className="overview-streak">{winStreak}</h3>  
           </div>  
           <div>  
             <p>  
               <Hourglass size={18} /> Pending  
             </p>  
-            <h3 className="overview-pending">  
-              {pendingCount}  
-            </h3>  
+            <h3 className="overview-pending">{pendingCount}</h3>  
           </div>  
           {edgePredictions.length > 0 && (  
             <>  
               <div>  
                 <p>  
-                  <BarChart3 size={18} /> Edge  
-                  Accuracy  
+                  <BarChart3 size={18} /> Edge Accuracy  
                 </p>  
-                <h3 className="overview-edge">  
-                  {edgeAccuracy}%  
-                </h3>  
+                <h3 className="overview-edge">{edgeAccuracy}%</h3>  
               </div>  
               <div>  
                 <p>  
-                  <ArrowRightLeft size={18} /> Avg  
-                  Edge  
+                  <ArrowRightLeft size={18} /> Avg Edge  
                 </p>  
-                <h3 className="overview-edge">  
-                  {avgEdge}%  
-                </h3>  
+                <h3 className="overview-edge">{avgEdge}%</h3>  
               </div>  
             </>  
           )}  
         </div>  
       </div>
 
-      {/* ============================================  
-          PREDICTION JOURNAL  
-          ============================================ */}  
+      {/* PREDICTION JOURNAL */}  
       <div className="journal-card">  
         <div className="journal-header">  
           <h2>Prediction Journal</h2>  
           <div className="journal-controls">  
             <div className="journal-filters">  
               <button  
-                className={  
-                  journalFilter === "ALL"  
-                    ? "active"  
-                    : ""  
-                }  
-                onClick={() =>  
-                  setJournalFilter("ALL")  
-                }  
+                className={journalFilter === "ALL" ? "active" : ""}  
+                onClick={() => setJournalFilter("ALL")}  
               >  
                 All ({journal.length})  
               </button>  
               <button  
                 className={`filter-win ${  
-                  journalFilter === "WIN"  
-                    ? "active"  
-                    : ""  
+                  journalFilter === "WIN" ? "active" : ""  
                 }`}  
-                onClick={() =>  
-                  setJournalFilter("WIN")  
-                }  
+                onClick={() => setJournalFilter("WIN")}  
               >  
                 Wins ({wins})  
               </button>  
               <button  
                 className={`filter-loss ${  
-                  journalFilter === "LOSS"  
-                    ? "active"  
-                    : ""  
+                  journalFilter === "LOSS" ? "active" : ""  
                 }`}  
-                onClick={() =>  
-                  setJournalFilter("LOSS")  
-                }  
+                onClick={() => setJournalFilter("LOSS")}  
               >  
                 Losses ({losses})  
               </button>  
               <button  
                 className={`filter-pending ${  
-                  journalFilter === "PENDING"  
-                    ? "active"  
-                    : ""  
+                  journalFilter === "PENDING" ? "active" : ""  
                 }`}  
-                onClick={() =>  
-                  setJournalFilter("PENDING")  
-                }  
+                onClick={() => setJournalFilter("PENDING")}  
               >  
                 Pending ({pendingCount})  
               </button>  
@@ -2682,17 +2589,11 @@ function App() {
                     <td>{entry.time}</td>  
                     <td  
                       className={  
-                        entry.signal.includes(  
-                          "ABOVE"  
-                        ) ||  
+                        entry.signal.includes("ABOVE") ||  
                         entry.signal.includes("UP")  
                           ? "signal-up"  
-                          : entry.signal.includes(  
-                              "BELOW"  
-                            ) ||  
-                            entry.signal.includes(  
-                              "DOWN"  
-                            )  
+                          : entry.signal.includes("BELOW") ||  
+                            entry.signal.includes("DOWN")  
                           ? "signal-down"  
                           : ""  
                       }  
@@ -2704,10 +2605,7 @@ function App() {
                         ? `$${entry.targetPrice.toLocaleString()}`  
                         : "—"}  
                     </td>  
-                    <td>  
-                      $  
-                      {entry.initialPrice.toLocaleString()}  
-                    </td>  
+                    <td>${entry.initialPrice.toLocaleString()}</td>  
                     <td>  
                       {entry.finalPrice  
                         ? `$${entry.finalPrice.toLocaleString()}`  
@@ -2725,12 +2623,9 @@ function App() {
                       )}  
                     </td>  
                     <td>  
-                      {entry.kalshiYes !==  
-                        undefined ||  
+                      {entry.kalshiYes !== undefined ||  
                       entry.kalshiNo !== undefined  
-                        ? `${  
-                            entry.kalshiYes ?? "—"  
-                          }/${  
+                        ? `${entry.kalshiYes ?? "—"}/${  
                             entry.kalshiNo ?? "—"  
                           }`  
                         : "—"}  
@@ -2746,9 +2641,7 @@ function App() {
                               : "edge-cell-neutral"  
                           }`}  
                         >  
-                          {entry.edge > 0  
-                            ? "+"  
-                            : ""}  
+                          {entry.edge > 0 ? "+" : ""}  
                           {Math.round(entry.edge)}%  
                         </span>  
                       ) : (  
@@ -2756,37 +2649,25 @@ function App() {
                       )}  
                     </td>  
                     <td>  
-                      {entry.recommendedBet !==  
-                      undefined  
-                        ? `$${entry.recommendedBet.toFixed(  
-                            2  
-                          )}`  
+                      {entry.recommendedBet !== undefined  
+                        ? `$${entry.recommendedBet.toFixed(2)}`  
                         : "—"}  
                     </td>  
                     <td>  
-                      <span  
-                        className={getStatusClass(  
-                          entry.status  
-                        )}  
-                      >  
+                      <span className={getStatusClass(entry.status)}>  
                         {entry.status}  
                       </span>  
                     </td>  
                     <td className="countdown-cell">  
-                      {entry.status ===  
-                      "PENDING" ? (  
+                      {entry.status === "PENDING" ? (  
                         <PendingCountdown  
                           predictionTimestamp={  
                             entry.predictionTimestamp  
                           }  
-                          getTimeRemaining={  
-                            getTimeRemaining  
-                          }  
+                          getTimeRemaining={getTimeRemaining}  
                         />  
                       ) : (  
-                        <span className="graded-check">  
-                          ✓  
-                        </span>  
+                        <span className="graded-check">✓</span>  
                       )}  
                     </td>  
                   </tr>  
@@ -2801,8 +2682,7 @@ function App() {
                       color: "#888",  
                     }}  
                   >  
-                    No entries to display for this  
-                    filter.  
+                    No entries to display for this filter.  
                   </td>  
                 </tr>  
               )}  
@@ -2831,16 +2711,12 @@ function PendingCountdown({
 
   useEffect(() => {  
     const timer = setInterval(() => {  
-      setDisplay(  
-        getTimeRemaining(predictionTimestamp)  
-      );  
+      setDisplay(getTimeRemaining(predictionTimestamp));  
     }, 1000);  
     return () => clearInterval(timer);  
   }, [predictionTimestamp, getTimeRemaining]);
 
-  return (  
-    <span className="pending-timer">{display}</span>  
-  );  
+  return <span className="pending-timer">{display}</span>;  
 }
 
 export default App;  

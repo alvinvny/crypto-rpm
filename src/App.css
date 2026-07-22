@@ -250,7 +250,7 @@ h1 {
   margin: 0;  
 }
 
-.target-input[type="number"] { -moz-appearance: textfield; }
+.target-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }  
 
 .target-set-btn {  
   background: #f7931a;  
@@ -345,7 +345,7 @@ h1 {
   margin: 0;  
 }
 
-.kalshi-price-input[type="number"] { -moz-appearance: textfield; }
+.kalshi-price-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }  
 
 .kalshi-prices-set-btn {  
   background: #f7931a;  
@@ -1104,7 +1104,7 @@ h1 {
   margin: 0;  
 }
 
-.kalshi-input[type="number"] { -moz-appearance: textfield; }
+.kalshi-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }  
 
 .kalshi-set-btn {  
   background: #f7931a;  
@@ -1353,7 +1353,7 @@ h1 {
   margin: 0;  
 }
 
-.bankroll-input[type="number"] { -moz-appearance: textfield; }
+.bankroll-input[type="number"] { -moz-appearance: textfield; appearance: textfield; }  
 
 .bankroll-set-btn {  
   background: #f7931a;  
@@ -2012,4 +2012,318 @@ tbody tr:hover { background: #1a1a1a; }
   .journal-filters { flex-direction: column; }
 
   .rec-stats { flex-direction: column; align-items: center; }  
+}  /* ============================================  
+   KALSHI API STATUS STYLES (v9.0)  
+   ============================================ */
+
+.kalshi-api-status {  
+  display: flex;  
+  align-items: center;  
+}
+
+.api-connected {  
+  display: inline-flex;  
+  align-items: center;  
+  gap: 4px;  
+  background: #0d3d1f;  
+  color: #00ff88;  
+  padding: 4px 10px;  
+  border-radius: 999px;  
+  font-size: 0.65rem;  
+  font-weight: bold;  
+  text-transform: uppercase;  
+  letter-spacing: 0.5px;  
+  border: 1px solid #00ff8833;  
+  animation: livePulse 2s ease-in-out infinite;  
+}
+
+@keyframes livePulse {  
+  0%, 100% { box-shadow: 0 0 4px rgba(0, 255, 136, 0.2); }  
+  50% { box-shadow: 0 0 12px rgba(0, 255, 136, 0.4); }  
+}
+
+.api-disconnected {  
+  display: inline-flex;  
+  align-items: center;  
+  gap: 4px;  
+  background: #2a2a2a;  
+  color: #888;  
+  padding: 4px 10px;  
+  border-radius: 999px;  
+  font-size: 0.65rem;  
+  font-weight: bold;  
+  text-transform: uppercase;  
+  letter-spacing: 0.5px;  
+  border: 1px solid #44444444;  
+}
+
+/* Kalshi Live Bar */  
+.kalshi-live-bar {  
+  display: flex;  
+  align-items: center;  
+  justify-content: space-between;  
+  padding: 8px 2rem;  
+  background: #0a1a10;  
+  border-bottom: 1px solid #00ff8822;  
+  font-size: 0.75rem;  
+  color: #66cc88;  
+}
+
+.kalshi-live-info {  
+  display: flex;  
+  align-items: center;  
+  gap: 8px;  
+  flex-wrap: wrap;  
+}
+
+.kalshi-live-dot {  
+  width: 6px;  
+  height: 6px;  
+  background: #00ff88;  
+  border-radius: 50%;  
+  animation: liveDot 1.5s ease-in-out infinite;  
+}
+
+@keyframes liveDot {  
+  0%, 100% { opacity: 1; }  
+  50% { opacity: 0.3; }  
+}
+
+.kalshi-live-sep {  
+  color: #335;  
+}
+
+.kalshi-refresh-btn {  
+  background: transparent;  
+  border: 1px solid #00ff8833;  
+  color: #00ff88;  
+  border-radius: 6px;  
+  padding: 4px 8px;  
+  cursor: pointer;  
+  transition: all 0.2s ease;  
+  display: flex;  
+  align-items: center;  
+}
+
+.kalshi-refresh-btn:hover {  
+  background: #00ff8811;  
+  border-color: #00ff88;  
+}
+
+/* Kalshi Error Bar */  
+.kalshi-error-bar {  
+  display: flex;  
+  align-items: center;  
+  gap: 8px;  
+  padding: 8px 2rem;  
+  background: #1a1000;  
+  border-bottom: 1px solid #f7931a33;  
+  font-size: 0.75rem;  
+  color: #f7931a;  
+}
+
+.kalshi-error-bar svg {  
+  flex-shrink: 0;  
+}
+
+.kalshi-error-bar span {  
+  flex: 1;  
+}
+
+.kalshi-retry-btn {  
+  background: #f7931a;  
+  color: black;  
+  border: none;  
+  border-radius: 6px;  
+  padding: 4px 12px;  
+  font-weight: bold;  
+  font-size: 0.7rem;  
+  cursor: pointer;  
+  transition: background 0.2s;  
+}
+
+.kalshi-retry-btn:hover {  
+  background: #e08000;  
+}
+
+/* Auto-filled badge */  
+.auto-filled-badge {  
+  display: inline-block;  
+  background: #0d3d1f;  
+  color: #00ff88;  
+  padding: 2px 6px;  
+  border-radius: 4px;  
+  font-size: 0.55rem;  
+  font-weight: bold;  
+  margin-left: 6px;  
+  vertical-align: middle;  
+  letter-spacing: 0.5px;  
+}
+
+/* Mobile adjustments for Kalshi bar */  
+@media (max-width: 768px) {  
+  .kalshi-live-bar {  
+    padding: 8px 1.25rem;  
+    font-size: 0.65rem;  
+  }  
+    
+  .kalshi-error-bar {  
+    padding: 8px 1.25rem;  
+    font-size: 0.65rem;  
+  }  
+    
+  .kalshi-api-status {  
+    order: -1;  
+  }  
+}  /* ============================================  
+   KALSHI API STATUS BAR  
+   ============================================ */  
+.kalshi-status-bar {  
+  display: flex;  
+  justify-content: space-between;  
+  align-items: center;  
+  padding: 10px 16px;  
+  border-radius: 10px;  
+  margin-bottom: 1rem;  
+  font-size: 0.8rem;  
+  font-weight: 600;  
+  flex-wrap: wrap;  
+  gap: 8px;  
+}
+
+.kalshi-connected {  
+  background: #0d3d1f;  
+  border: 1px solid #00ff8844;  
+  color: #00ff88;  
+}
+
+.kalshi-disconnected {  
+  background: #2a2a2a;  
+  border: 1px solid #44444444;  
+  color: #888;  
+}
+
+.kalshi-status-left {  
+  display: flex;  
+  align-items: center;  
+  gap: 8px;  
+  flex-wrap: wrap;  
+}
+
+.kalshi-status-text {  
+  letter-spacing: 0.5px;  
+}
+
+.kalshi-close-time {  
+  background: rgba(0, 255, 136, 0.1);  
+  padding: 2px 8px;  
+  border-radius: 6px;  
+  font-size: 0.75rem;  
+}
+
+.kalshi-status-right {  
+  display: flex;  
+  align-items: center;  
+  gap: 8px;  
+}
+
+.kalshi-last-update {  
+  font-size: 0.75rem;  
+  opacity: 0.7;  
+}
+
+.kalshi-refresh-btn {  
+  background: rgba(255, 255, 255, 0.1);  
+  border: 1px solid rgba(255, 255, 255, 0.2);  
+  border-radius: 6px;  
+  padding: 4px 8px;  
+  cursor: pointer;  
+  color: inherit;  
+  display: flex;  
+  align-items: center;  
+  transition: all 0.2s ease;  
+}
+
+.kalshi-refresh-btn:hover {  
+  background: rgba(255, 255, 255, 0.2);  
+  transform: rotate(180deg);  
+}
+
+.kalshi-error-banner {  
+  display: flex;  
+  align-items: center;  
+  gap: 8px;  
+  padding: 10px 16px;  
+  background: #3d2800;  
+  border: 1px solid #ff880033;  
+  border-radius: 10px;  
+  margin-bottom: 1rem;  
+  color: #ffaa66;  
+  font-size: 0.8rem;  
+  flex-wrap: wrap;  
+}
+
+.kalshi-error-banner svg {  
+  color: #ff8800;  
+  flex-shrink: 0;  
+}
+
+.kalshi-error-hint {  
+  color: #888;  
+  font-size: 0.75rem;  
+}
+
+.auto-label {  
+  color: #00ff88;  
+  font-size: 0.75rem;  
+  font-weight: 400;  
+  margin-left: 6px;  
+}
+
+/* Mobile adjustments for Kalshi status */  
+@media (max-width: 768px) {  
+  .kalshi-status-bar {  
+    flex-direction: column;  
+    align-items: flex-start;  
+    font-size: 0.75rem;  
+  }
+
+  .kalshi-error-banner {  
+    flex-direction: column;  
+    align-items: flex-start;  
+  }  
+}  /* ============================================  
+   LIVE CHART  
+   ============================================ */  
+.live-chart-header {  
+  display: flex;  
+  align-items: center;  
+  gap: 8px;  
+  padding: 0 0 12px;  
+}
+
+.live-dot {  
+  width: 8px;  
+  height: 8px;  
+  background: #00ff88;  
+  border-radius: 50%;  
+  animation: liveDotPulse 1.5s ease-in-out infinite;  
+}
+
+@keyframes liveDotPulse {  
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px #00ff88; }  
+  50% { opacity: 0.3; box-shadow: 0 0 8px #00ff88; }  
+}
+
+.live-chart-title {  
+  color: #00ff88;  
+  font-weight: bold;  
+  font-size: 0.8rem;  
+  letter-spacing: 1px;  
+}
+
+.live-chart-points {  
+  color: #555;  
+  font-size: 0.7rem;  
+  margin-left: auto;  
 }  
